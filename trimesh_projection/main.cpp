@@ -16,6 +16,8 @@ using namespace std;
 #include <vcg/complex/trimesh/update/color.h>
 #include <vcg/complex/trimesh/update/flag.h>
 #include <vcg/complex/trimesh/clean.h>
+#include <vcg/complex/trimesh/smooth.h>
+
 #include <vcg/complex/intersection.h>
 #include <vcg/space/index/grid_static_ptr.h>
 #include <vcg/space/index/spatial_hashing.h>
@@ -94,6 +96,8 @@ int main(int argc,char ** argv){
   tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
+  tri::Smooth<MyMesh>::VertexNormalLaplacian(mesh,2,false);
+
   tri::UpdateNormals<MyMesh>::NormalizeVertex(mesh);
   tri::UpdateQuality<MyMesh>::VertexConstant(out_cloud, 0);  
   float maxDist = mesh.bbox.Diag();
