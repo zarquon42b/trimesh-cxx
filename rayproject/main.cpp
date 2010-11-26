@@ -164,11 +164,6 @@ int main(int argc,char ** argv){
 
         if (f_ptr && t < thresh)
             {MyMesh::CoordType tt = in_cloud.vert[i].P()+in_cloud.vert[i].N()*t;
-            int f_i = vcg::tri::Index(mesh, f_ptr);
-            MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-            double t0;
-            t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
-            out_cloud.vert[i].N() = ti/t0;
             out_cloud.vert[i].Q() = t;
             out_cloud.vert[i].P() = tt;
 
@@ -179,11 +174,6 @@ int main(int argc,char ** argv){
             ray.SetDirection(-dir);
             if (f_ptr && t < thresh)
                 {MyMesh::CoordType tt = in_cloud.vert[i].P()+in_cloud.vert[i].N()*t;
-                int f_i = vcg::tri::Index(mesh, f_ptr);
-                MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-                double t0;
-                t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
-                out_cloud.vert[i].N() = ti/t0;
                 out_cloud.vert[i].Q() = t;
                 out_cloud.vert[i].P() = tt;
 
@@ -193,11 +183,6 @@ int main(int argc,char ** argv){
                 Point3f& currp = in_cloud.vert[i].P();
                 Point3f& clost = out_cloud.vert[i].P();
                 MyFace* f_ptr=GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
-                int f_i = vcg::tri::Index(mesh, f_ptr);
-                MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-                double t0;
-                t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
-                out_cloud.vert[i].N() = ti/t0;
                 out_cloud.vert[i].Q() = minDist;
             }
           }
@@ -212,8 +197,8 @@ int main(int argc,char ** argv){
   //--------------------------------------------------------------------------------------//
   tri::UpdateBounding<MyMesh>::Box(in_cloud);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
-  tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(in_cloud);
-  tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
+  tri::UpdateNormals<MyMesh>::PerVertexNormalized(in_cloud);
+  //tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
 
   int t2 = clock();
   tri::io::ExporterPLY<MyMesh>::Save(in_cloud,filename,tri::io::Mask::IOM_VERTNORMAL +tri::io::Mask::IOM_VERTQUALITY, false); // in ASCII
