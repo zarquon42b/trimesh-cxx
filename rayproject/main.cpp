@@ -1,5 +1,5 @@
-// Author: Andrea Tagliasacchi
-// Date: 22 May 2010
+// Author: Stefan Schlager
+// Date: 26 November 2010
 #include <string.h>
 #include <vector>
 using namespace std;

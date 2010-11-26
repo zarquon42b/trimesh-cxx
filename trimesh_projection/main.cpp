@@ -1,5 +1,6 @@
 // Author: Andrea Tagliasacchi
 // Date: 22 May 2010
+// modified in the follwing months by Stefan Schlager
 
 #include <vector>
 using namespace std;

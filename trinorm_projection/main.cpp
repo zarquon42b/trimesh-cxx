@@ -1,6 +1,6 @@
 // Author: Andrea Tagliasacchi
 // Date: 22 May 2010
-
+#include <string.h>
 #include <vector>
 using namespace std;
 
@@ -44,6 +44,7 @@ typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 //typedef vcg::SpatialHashTable<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
+     char filename[256];
   if (argc<3){
 		printf("\n");
     printf("    Compute a projection of a point cloud onto a mesh\n");
@@ -56,10 +57,10 @@ int main(int argc,char ** argv){
     printf("The vertex quality (requires ply files) represents the projection distance.\n");
 		return 0;
 	}
-  
-	MyMesh mesh;
-  MyMesh in_cloud;
-  MyMesh out_cloud;
+    strcpy(filename, argv[2]);
+    MyMesh mesh;
+    MyMesh in_cloud;
+    MyMesh out_cloud;
 	
   //--------------------------------------------------------------------------------------//
   //
@@ -89,7 +90,7 @@ int main(int argc,char ** argv){
   // Remove duplicates and update mesh properties
   //--------------------------------------------------------------------------------------//
   int dup = tri::Clean<MyMesh>::RemoveDuplicateVertex(mesh);
-        int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
+  int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
   if (dup > 0 || unref > 0)
                 printf("Removed %i duplicate and %i unreferenced vertices from mesh %s\n",dup,unref,argv[2]);
 
@@ -97,12 +98,10 @@ int main(int argc,char ** argv){
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
   tri::UpdateNormals<MyMesh>::NormalizeVertex(mesh);
-  tri::UpdateBounding<MyMesh>::Box(mesh);
-  //tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
-  //tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(in_cloud);
+  //tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
-  tri::UpdateQuality<MyMesh>::VertexConstant(out_cloud, 0);  
-  float maxDist = 1e10;
+  tri::UpdateQuality<MyMesh>::VertexConstant(out_cloud, 0);
+  float maxDist = mesh.bbox.Diag();
   float minDist = 1e-10;
   float t;
 
@@ -113,7 +112,7 @@ int main(int argc,char ** argv){
   // Update the FaceProjection flags needed for projection/distance queries
   // Create a static grid (for fast indexing) and fill it 
   //--------------------------------------------------------------------------------------//
-  vcg::tri::FaceTmark<MyMesh> mf;
+    vcg::tri::FaceTmark<MyMesh> mf;
     mf.SetMesh( &mesh );
     vcg::RayTriangleIntersectionFunctor<true> FintFunct;
     vcg::face::PointDistanceBaseFunctor<float> PDistFunct;
@@ -125,11 +124,10 @@ int main(int argc,char ** argv){
   
   //--------------------------------------------------------------------------------------//
   //
-  //                                PERFORM DISTANCE QUERIES
+  //                                PERFORM PROJECTIONS AND UPDATE NORMALS
   //
   //--------------------------------------------------------------------------------------//
   int t1=clock();
-   int count = 1;
   for(int i=0; i<in_cloud.vn; i++){
 
     vcg::Ray3f ray;
@@ -140,43 +138,37 @@ int main(int argc,char ** argv){
     ray.SetDirection(dir);
 
 
-        MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
-        int f_i = vcg::tri::Index(mesh, f_ptr);
-        MyMesh::CoordType tt = in_cloud.vert[i].P()+in_cloud.vert[i].N()*t;
-       if (abs(f_i)<mesh.fn)
-        {  MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-           double t0;
-           t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
-           out_cloud.vert[i].N() = ti/t0;
-           out_cloud.vert[i].P() = tt;
-           out_cloud.vert[i].Q() = t;
+    MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
+
+        if (f_ptr)
+        {   MyMesh::CoordType tt = in_cloud.vert[i].P()+in_cloud.vert[i].N()*t;
+            int f_i = vcg::tri::Index(mesh, f_ptr);
+            MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
+            double t0;
+            t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
+            out_cloud.vert[i].N() = ti/t0;
+            out_cloud.vert[i].Q() = t;
+            out_cloud.vert[i].P() = tt;
 
         }
         else
-       {printf("Couldn't trace landmark %d along ray, closest point on target will be sought",i+1);
-        Point3f& currp = in_cloud.vert[i].P();
-        Point3f& clost = out_cloud.vert[i].P();
-        MyFace* f_ptr=GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
-        MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-        double t0;
-        t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
-        out_cloud.vert[i].N() = ti/t0;
-        out_cloud.vert[i].Q() = minDist;
+        {   printf("Couldn't trace landmark %d along ray on %s: closest point on target will be sought\n",i+1,filename);
+            Point3f& currp = in_cloud.vert[i].P();
+            Point3f& clost = out_cloud.vert[i].P();
+            MyFace* f_ptr=GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
+            int f_i = vcg::tri::Index(mesh, f_ptr);
+            MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
+            double t0;
+            t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
+            out_cloud.vert[i].N() = ti/t0;
+            out_cloud.vert[i].Q() = minDist;
         }
 
-
-    //if (f_i)
-    //   MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-   // double t0;
-    //t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
-    //out_cloud.vert[i].N() = ti/t0;
   }
 
   int t2 = clock();
   tri::io::ExporterPLY<MyMesh>::Save(out_cloud,"out_cloud.ply",tri::io::Mask::IOM_VERTNORMAL +tri::io::Mask::IOM_VERTQUALITY, false); // in ASCII
   printf("Completed projection of %d sample in %i msec\n", in_cloud.vn, t2-t1);
 
-
-  //printf("%i ",tt);
   return 0;
 }
