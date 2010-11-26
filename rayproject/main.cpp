@@ -20,6 +20,7 @@ using namespace std;
 #include <vcg/space/index/grid_static_ptr.h>
 #include <vcg/space/index/spatial_hashing.h>
 #include <vcg/complex/trimesh/closest.h>
+#include <vcg/complex/trimesh/smooth.h>
 
 // VCG File Format Importer/Exporter
 #include <wrap/io_trimesh/import.h>
@@ -197,7 +198,8 @@ int main(int argc,char ** argv){
   //--------------------------------------------------------------------------------------//
   tri::UpdateBounding<MyMesh>::Box(in_cloud);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
-  tri::UpdateNormals<MyMesh>::PerVertexNormalized(in_cloud);
+  tri::Smooth<MyMesh>::VertexNormalLaplacian(mesh,2,false);
+  tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
   //tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
 
   int t2 = clock();
