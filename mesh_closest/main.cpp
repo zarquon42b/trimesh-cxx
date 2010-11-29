@@ -52,12 +52,13 @@ int main(int argc,char ** argv){
     if (argc<3){
 
         printf("\n");
-        printf("    Compute a projection of a point cloud onto a mesh\n");
-        printf("    Usage: trimesh_project <cloud> <mesh>\n");
-        printf("       <cloud>        Point cloud over which to project (PLY format).\n");
-        printf("       <mesh>         Mesh model over which to project (PLY format).\n");
+        printf("    Compute a projection of the vertices of a reference mesh onto a target mesh and saves in ASCII PLY Format\n");
+        printf("    Usage: mesh_closest <mesh> <mesh><output.ply> \n");
+        printf("       <mesh>        Reference mesh\n");
+        printf("       <mesh>        Target mesh");
+        printf("       <output.ply>      Optional: name of output (standard is project.mesh.ply)");
         printf("\n");
-        printf("Saves the projected point cloud in the file out_cloud.ply when terminated.\n");
+        printf("Saves the projected mesh cloud in when terminated.\n");
         printf("The vertex coordinates represent the projected samples (in same order as input.\n");
         printf("The vertex quality (requires ply files) represents the projection distance.\n");
 		return 0;

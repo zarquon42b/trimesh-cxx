@@ -47,12 +47,13 @@ int main(int argc,char ** argv){
      char filename[256];
   if (argc<3){
 		printf("\n");
-    printf("    Compute a projection of a point cloud onto a mesh\n");
-    printf("    Usage: trimesh_project <cloud> <mesh>\n");
-    printf("       <cloud>        Point cloud over which to project (PLY format).\n");
+    printf("    Compute a projection of a point cloud onto a mesh along given normals\n if No face is hit, the closest point on the target mesh is used");
+    printf("    Usage: trinorm_project <cloud> <mesh>\n");
+    printf("       <cloud>        Point cloud over which to project including normal information of vertices (PLY format).\n");
     printf("       <mesh>         Mesh model over which to project (PLY format).\n");
+    printf("       <output>       Optional Projected points (PLY format).\n");
     printf("\n");    
-    printf("Saves the projected point cloud in the file out_cloud.ply when terminated.\n");
+    printf("Saves the projected point cloud in the file out_cloud.ply (if output is not specified) when terminated.\n");
     printf("The vertex coordinates represent the projected samples (in same order as input.\n");
     printf("The vertex quality (requires ply files) represents the projection distance.\n");
 		return 0;

@@ -50,11 +50,11 @@ int main(int argc,char ** argv){
   if (argc<4){
 		printf("\n");
     printf("    Compute a projection of a point cloud onto a mesh\n");
-    printf("    Usage: trimesh_project <cloud> <mesh>\n");
+    printf("    Usage: rayproject <reference mesh> < targetmesh> <threshold><output.ply>\n");
     printf("       <reference mesh>        Point cloud over which to project (PLY format).\n");
     printf("       <target mesh>         Mesh model over which to project (PLY format).\n");
-    printf("       <threshold - delimits max distance to seek along ray.\n");
-    printf("       optional: <filename - define output filename (and path).\n");
+    printf("       <threshold> - delimits max distance to seek along ray.\n");
+    printf("       optional: <output.ply> - define output filename (and path).\n");
 
     printf("\n");    
     printf("projects the vertices of the reference mesh onto the target mesh when terminated.\n");

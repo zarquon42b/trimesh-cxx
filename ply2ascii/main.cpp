@@ -49,9 +49,9 @@ int main(int argc,char ** argv){
   if (argc< 3){
 		printf("\n");
     printf("    Convert a mesh to ascii ply format\n");
-    printf("    Usage: trimesh_project <input.mesh> <output.ply>\n");
+    printf("    Usage: ply2ascii <input.mesh> <output.ply>\n");
     printf("       <mesh>        any common mesh file (any common mesh file).\n");
-    printf("       <mesh>        mesh cleaned updated vertex normals saved in ascii PLY format.\n");
+    printf("       <output.ply>      cleaned mesh with updated vertex normals saved in ascii PLY format.\n");
     
    
 		return 0;

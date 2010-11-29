@@ -48,10 +48,10 @@ int main(int argc,char ** argv){
 	char filename[256];
   if (argc< 3){
 		printf("\n");
-    printf("    Convert a mesh to ascii ply format\n");
-    printf("    Usage: trimesh_project <input.mesh> <output.ply>\n");
-    printf("       <mesh>        any common mesh file (any common mesh file).\n");
-    printf("       <mesh>        mesh cleaned updated vertex normals saved in ascii PLY format.\n");
+    printf("    Smooth a mesh using a taubin smooth\n");
+    printf("    Usage: trismooth <input.mesh> <output.ply>\n");
+    printf("       <input.mesh>        any common mesh file (any common mesh file).\n");
+    printf("       <output.ply>        smoothed mesh with taubin smooth applied (PLY Format).\n");
     
    
 		return 0;
