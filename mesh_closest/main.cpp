@@ -1,6 +1,7 @@
-// Author: Stefan Schlager
-// Date: 26 November 2010
-#include <string.h>
+// Author: Andrea Tagliasacchi
+// Date: 22 May 2010
+// modified in the follwing months by Stefan Schlager
+
 #include <vector>
 using namespace std;
 
@@ -16,11 +17,12 @@ using namespace std;
 #include <vcg/complex/trimesh/update/color.h>
 #include <vcg/complex/trimesh/update/flag.h>
 #include <vcg/complex/trimesh/clean.h>
+#include <vcg/complex/trimesh/smooth.h>
+
 #include <vcg/complex/intersection.h>
 #include <vcg/space/index/grid_static_ptr.h>
 #include <vcg/space/index/spatial_hashing.h>
 #include <vcg/complex/trimesh/closest.h>
-#include <vcg/complex/trimesh/smooth.h>
 
 // VCG File Format Importer/Exporter
 #include <wrap/io_trimesh/import.h>
@@ -45,35 +47,34 @@ typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 //typedef vcg::SpatialHashTable<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
-    float thresh;
-    char filename[256];
-  if (argc<4){
-		printf("\n");
-    printf("    Compute a projection of a point cloud onto a mesh\n");
-    printf("    Usage: trimesh_project <cloud> <mesh>\n");
-    printf("       <reference mesh>        Point cloud over which to project (PLY format).\n");
-    printf("       <target mesh>         Mesh model over which to project (PLY format).\n");
-    printf("       <threshold - delimits max distance to seek along ray.\n");
-    printf("       optional: <filename - define output filename (and path).\n");
 
-    printf("\n");    
-    printf("projects the vertices of the reference mesh onto the target mesh when terminated.\n");
-    //printf("The vertex coordinates represent the projected samples (in same order as input.\n");
-    printf("The vertex quality (requires ply files) represents the projection distance.\n");
+         char filename[256];
+    if (argc<3){
+
+        printf("\n");
+        printf("    Compute a projection of a point cloud onto a mesh\n");
+        printf("    Usage: trimesh_project <cloud> <mesh>\n");
+        printf("       <cloud>        Point cloud over which to project (PLY format).\n");
+        printf("       <mesh>         Mesh model over which to project (PLY format).\n");
+        printf("\n");
+        printf("Saves the projected point cloud in the file out_cloud.ply when terminated.\n");
+        printf("The vertex coordinates represent the projected samples (in same order as input.\n");
+        printf("The vertex quality (requires ply files) represents the projection distance.\n");
 		return 0;
 	}
-    else if (argc == 4)
-          {
-          strcpy(filename, "project.mesh.ply");
-          }
-    else
-          {
-          strcpy(filename, argv[4]);
-          }
-    thresh=atof(argv[3]);
-    MyMesh mesh;
-    MyMesh in_cloud;
-    MyMesh out_cloud;
+
+    else if (argc == 3)
+            {
+            strcpy(filename, "out_cloud.ply");
+            }
+            else
+            {
+            strcpy(filename, argv[3]);
+            }
+  
+	MyMesh mesh;
+  MyMesh in_cloud;
+  MyMesh out_cloud;
 	
   //--------------------------------------------------------------------------------------//
   //
@@ -90,12 +91,8 @@ int main(int argc,char ** argv){
 		printf("Error in reading %s: '%s'\n",argv[2],tri::io::Importer<MyMesh>::ErrorMsg(err2));
 		exit(-1);  
 	}
-
-
   // Allocate space for projected cloud
   tri::Allocator<MyMesh>::AddVertices(out_cloud,in_cloud.vn);
-  
-    
 
   //--------------------------------------------------------------------------------------//
   //
@@ -112,23 +109,13 @@ int main(int argc,char ** argv){
   tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
-  //tri::Smooth<MyMesh>::VertexNormalLaplacian(mesh,2,false);
+  tri::Smooth<MyMesh>::VertexNormalLaplacian(mesh,2,false);
 
   tri::UpdateNormals<MyMesh>::NormalizeVertex(mesh);
-  tri::UpdateBounding<MyMesh>::Box(mesh);
-  //tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
-  //tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(in_cloud);
-  tri::UpdateBounding<MyMesh>::Box(in_cloud);
-  tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
-  tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(in_cloud);
-  tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
-  tri::UpdateQuality<MyMesh>::VertexConstant(in_cloud, 0);
-
-  tri::UpdateQuality<MyMesh>::VertexConstant(out_cloud, 0);
-
+  tri::UpdateQuality<MyMesh>::VertexConstant(out_cloud, 0);  
   float maxDist = mesh.bbox.Diag();
   float minDist = 1e-10;
-  float t;
+
 
   //--------------------------------------------------------------------------------------//
   //
@@ -137,15 +124,14 @@ int main(int argc,char ** argv){
   // Update the FaceProjection flags needed for projection/distance queries
   // Create a static grid (for fast indexing) and fill it 
   //--------------------------------------------------------------------------------------//
-  vcg::tri::FaceTmark<MyMesh> mf;
-    mf.SetMesh( &mesh );
-    vcg::RayTriangleIntersectionFunctor<true> FintFunct;
-    vcg::face::PointDistanceBaseFunctor<float> PDistFunct;
-    tri::UpdateFlags<MyMesh>::FaceProjection(mesh);
-          TriMeshGrid static_grid;
-    printf("preprocessing mesh with %d faces\n", mesh.fn);
-          static_grid.Set(mesh.face.begin(), mesh.face.end());
-    tri::UpdateFlags<MyMesh>::FaceProjection(mesh);
+  vcg::tri::FaceTmark<MyMesh> mf; 
+  mf.SetMesh( &mesh );
+  vcg::face::PointDistanceBaseFunctor<float> PDistFunct;
+  tri::UpdateFlags<MyMesh>::FaceProjection(mesh);
+	TriMeshGrid static_grid;
+  printf("preprocessing mesh with %d faces\n", mesh.fn);
+	static_grid.Set(mesh.face.begin(), mesh.face.end());
+
   
   //--------------------------------------------------------------------------------------//
   //
@@ -153,65 +139,20 @@ int main(int argc,char ** argv){
   //
   //--------------------------------------------------------------------------------------//
   int t1=clock();
-   int count = 1;
   for(int i=0; i<in_cloud.vn; i++){
-
-    vcg::Ray3f ray;
-    Point3f orig = in_cloud.vert[i].P();
-    Point3f dir = in_cloud.vert[i].N();
-
-    ray.SetOrigin(orig);
-    ray.SetDirection(dir);
-
-
-        MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
-
-        if (f_ptr && t < thresh)
-            {MyMesh::CoordType tt = in_cloud.vert[i].P()+in_cloud.vert[i].N()*t;
-            out_cloud.vert[i].P()=tt;
-            out_cloud.vert[i].Q() = t;
-
-        }
-        else
-        {
-            MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
-            ray.SetDirection(-dir);
-            if (f_ptr && t < thresh)
-
-                {MyMesh::CoordType tt = in_cloud.vert[i].P()+in_cloud.vert[i].N()*t;
-                out_cloud.vert[i].P()=tt;
-                out_cloud.vert[i].Q() = t;
-
-            }
-            else
-            {   //printf("Couldn't trace landmark %d along ray, closest point on target will be sought\n",i+1);
-                Point3f& currp = in_cloud.vert[i].P();
-                Point3f& clost = out_cloud.vert[i].P();
-                MyFace* f_ptr=GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
-                out_cloud.vert[i].Q() = minDist;
-            }
-          }
-
+    Point3f& currp = in_cloud.vert[i].P();
+    Point3f& clost = out_cloud.vert[i].P();
+    MyFace* f_ptr= GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
+    out_cloud.vert[i].Q() = minDist;
     in_cloud.vert[i].P()=out_cloud.vert[i].P();
-    in_cloud.vert[i].Q()=out_cloud.vert[i].Q();
-    }
-  //--------------------------------------------------------------------------------------//
-  //
-  //                                UPDATE PROJECTED MESH
-  //
-  //--------------------------------------------------------------------------------------//
-
-
-
-
+  }
   tri::UpdateBounding<MyMesh>::Box(in_cloud);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
   tri::Smooth<MyMesh>::VertexNormalLaplacian(in_cloud,2,false);
   tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
-  //tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
 
   int t2 = clock();
-  tri::io::ExporterPLY<MyMesh>::Save(in_cloud,filename,tri::io::Mask::IOM_VERTNORMAL +tri::io::Mask::IOM_VERTQUALITY, false); // in ASCII
+  tri::io::ExporterPLY<MyMesh>::Save(in_cloud,filename,tri::io::Mask::IOM_VERTNORMAL + tri::io::Mask::IOM_VERTQUALITY, false); // in ASCII
   printf("Completed projection of %d sample in %i msec\n", in_cloud.vn, t2-t1);
 
 
