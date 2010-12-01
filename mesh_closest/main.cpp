@@ -53,7 +53,7 @@ int main(int argc,char ** argv){
 
         printf("\n");
         printf("    Compute a projection of the vertices of a reference mesh onto a target mesh and saves in ASCII PLY Format\n");
-        printf("    Usage: mesh_closest <mesh> <mesh><output.ply> \n");
+        printf("    Usage: mesh_closest <mesh> <mesh> <output.ply> \n");
         printf("       <mesh>        Reference mesh\n");
         printf("       <mesh>        Target mesh");
         printf("       <output.ply>      Optional: name of output (standard is project.mesh.ply)");

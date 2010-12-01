@@ -44,21 +44,30 @@ typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 //typedef vcg::SpatialHashTable<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
-     char filename[256];
+    float thresh;
+    char filename[256];
   if (argc<3){
 		printf("\n");
     printf("    Compute a projection of a point cloud onto a mesh along given normals\n if No face is hit, the closest point on the target mesh is used");
-    printf("    Usage: trinorm_project <cloud> <mesh>\n");
-    printf("       <cloud>        Point cloud containing starting points, including normal information of vertices (PLY format).\n");
+    printf("    Usage: trinorm_project <cloud> <mesh> <output>\n");
+    printf("       <cloud>        Point cloud over which to project including normal information of vertices (PLY format).\n");
     printf("       <mesh>         Mesh model over which to project (PLY format).\n");
-    printf("\n");
-    printf("Saves the projected point cloud in the file out_cloud.ply when terminated.\n");
+    printf("       <output>       Optional Projected points (PLY format).\n");
+    printf("\n");    
+    printf("Saves the projected point cloud in the file out_cloud.ply (if output is not specified) when terminated.\n");
     printf("The vertex coordinates represent the projected samples (in same order as input.\n");
     printf("The vertex quality (requires ply files) represents the projection distance.\n");
 		return 0;
 	}
-
-    strcpy(filename, argv[2]);
+  else if (argc == 4)
+        {
+        strcpy(filename, "out_cloud.ply");
+        }
+  else
+        {
+        strcpy(filename, argv[4]);
+        }
+    thresh=atof(argv[3]);
     MyMesh mesh;
     MyMesh in_cloud;
     MyMesh out_cloud;
@@ -141,7 +150,8 @@ int main(int argc,char ** argv){
 
     MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
 
-        if (f_ptr)
+        if (f_ptr && t < thresh)
+
         {   MyMesh::CoordType tt = in_cloud.vert[i].P()+in_cloud.vert[i].N()*t;
             int f_i = vcg::tri::Index(mesh, f_ptr);
             MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
@@ -153,7 +163,28 @@ int main(int argc,char ** argv){
 
         }
         else
-        {   printf("Couldn't trace landmark %d along ray on %s: closest point on target will be sought\n",i+1,filename);
+        {
+            MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
+            ray.SetDirection(-dir);
+            if (f_ptr && t < thresh)
+
+                {MyMesh::CoordType tt = in_cloud.vert[i].P()+in_cloud.vert[i].N()*t;
+                int f_i = vcg::tri::Index(mesh, f_ptr);
+                MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
+                double t0;
+                t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
+                out_cloud.vert[i].N() = ti/t0;
+                out_cloud.vert[i].Q() = t;
+                out_cloud.vert[i].P() = tt;
+
+            }
+
+
+
+
+            else
+
+            {   printf("Couldn't trace landmark %d along ray on %s: closest point on target will be sought\n",i+1,filename);
             Point3f& currp = in_cloud.vert[i].P();
             Point3f& clost = out_cloud.vert[i].P();
             MyFace* f_ptr=GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
@@ -163,12 +194,13 @@ int main(int argc,char ** argv){
             t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
             out_cloud.vert[i].N() = ti/t0;
             out_cloud.vert[i].Q() = minDist;
+            }
         }
 
   }
 
   int t2 = clock();
-  tri::io::ExporterPLY<MyMesh>::Save(out_cloud,"out_cloud.ply",tri::io::Mask::IOM_VERTNORMAL +tri::io::Mask::IOM_VERTQUALITY, false); // in ASCII
+  tri::io::ExporterPLY<MyMesh>::Save(out_cloud,filename,tri::io::Mask::IOM_VERTNORMAL +tri::io::Mask::IOM_VERTQUALITY, false); // in ASCII
   printf("Completed projection of %d sample in %i msec\n", in_cloud.vn, t2-t1);
 
   return 0;
