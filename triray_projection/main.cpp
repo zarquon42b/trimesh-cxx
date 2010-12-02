@@ -1,5 +1,5 @@
-// Author: Andrea Tagliasacchi
-// Date: 22 May 2010
+// Author: Stefan Schlager
+// Date: 2 Dec 2010
 #include <string.h>
 #include <vector>
 using namespace std;
@@ -20,6 +20,7 @@ using namespace std;
 #include <vcg/space/index/grid_static_ptr.h>
 #include <vcg/space/index/spatial_hashing.h>
 #include <vcg/complex/trimesh/closest.h>
+#include <vcg/complex/trimesh/smooth.h>
 
 // VCG File Format Importer/Exporter
 #include <wrap/io_trimesh/import.h>
@@ -46,6 +47,7 @@ typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 int main(int argc,char ** argv){
     float thresh;
     char filename[256];
+    char target[256];
   if (argc<3){
 		printf("\n");
     printf("    Compute a projection of a point cloud onto a mesh along given normals\n if No face is hit, the closest point on the target mesh is used");
@@ -54,19 +56,20 @@ int main(int argc,char ** argv){
     printf("       <mesh>         Mesh model over which to project (PLY format).\n");
     printf("       <output>       Optional Projected points (PLY format).\n");
     printf("\n");    
-    printf("Saves the projected point cloud in the file out_cloud.ply (if output is not specified) when terminated.\n");
+    printf("Saves the projected point cloud in the file out_ray.ply (if output is not specified) when terminated.\n");
     printf("The vertex coordinates represent the projected samples (in same order as input.\n");
     printf("The vertex quality (requires ply files) represents the projection distance.\n");
 		return 0;
 	}
   else if (argc == 4)
         {
-        strcpy(filename, "out_cloud.ply");
+        strcpy(filename, "out_ray.ply");
         }
   else
         {
         strcpy(filename, argv[4]);
         }
+    strcpy(target, argv[2]);
     thresh=atof(argv[3]);
     MyMesh mesh;
     MyMesh in_cloud;
@@ -107,6 +110,7 @@ int main(int argc,char ** argv){
   tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
+  tri::Smooth<MyMesh>::VertexNormalLaplacian(mesh,2,false);
   tri::UpdateNormals<MyMesh>::NormalizeVertex(mesh);
   //tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
@@ -150,7 +154,7 @@ int main(int argc,char ** argv){
 
     MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
 
-        if (f_ptr && t < thresh)
+        if (f_ptr && t < thresh) //check if face is hit and if distance is below threshold
 
         {   MyMesh::CoordType tt = in_cloud.vert[i].P()+in_cloud.vert[i].N()*t;
             int f_i = vcg::tri::Index(mesh, f_ptr);
@@ -165,8 +169,8 @@ int main(int argc,char ** argv){
         else
         {
             MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
-            ray.SetDirection(-dir);
-            if (f_ptr && t < thresh)
+            ray.SetDirection(-dir);         // search the other direction of the normal
+            if (f_ptr && t < thresh)  //check if face is hit and if distance is below threshold
 
                 {MyMesh::CoordType tt = in_cloud.vert[i].P()+in_cloud.vert[i].N()*t;
                 int f_i = vcg::tri::Index(mesh, f_ptr);
@@ -182,9 +186,9 @@ int main(int argc,char ** argv){
 
 
 
-            else
+            else //find the closest point if theres nothing along the ray
 
-            {   printf("Couldn't trace landmark %d along ray on %s: closest point on target will be sought\n",i+1,filename);
+            {  // printf("Couldn't trace landmark %d along ray on %s: closest point on target will be sought\n",i+1,target);
             Point3f& currp = in_cloud.vert[i].P();
             Point3f& clost = out_cloud.vert[i].P();
             MyFace* f_ptr=GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
