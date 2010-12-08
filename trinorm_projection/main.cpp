@@ -168,7 +168,7 @@ int main(int argc,char ** argv){
   }
 
   int t2 = clock();
-  tri::io::ExporterPLY<MyMesh>::Save(out_cloud,"out_cloud.ply",tri::io::Mask::IOM_VERTNORMAL +tri::io::Mask::IOM_VERTQUALITY, false); // in ASCII
+  tri::io::ExporterPLY<MyMesh>::Save(out_cloud,"out_norm.ply",tri::io::Mask::IOM_VERTNORMAL +tri::io::Mask::IOM_VERTQUALITY, false); // in ASCII
   printf("Completed projection of %d sample in %i msec\n", in_cloud.vn, t2-t1);
 
   return 0;
