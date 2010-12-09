@@ -144,7 +144,7 @@ int main(int argc,char ** argv){
     Point3f& currp = in_cloud.vert[i].P();
     Point3f& clost = out_cloud.vert[i].P();
     MyFace* f_ptr= GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
-    out_cloud.vert[i].Q() = minDist;
+    in_cloud.vert[i].Q() = minDist;
     in_cloud.vert[i].P()=out_cloud.vert[i].P();
   }
   tri::UpdateBounding<MyMesh>::Box(in_cloud);
