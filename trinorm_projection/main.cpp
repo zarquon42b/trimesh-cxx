@@ -53,12 +53,13 @@ int main(int argc,char ** argv){
      float tol1;
   if (argc<3){
 		printf("\n");
-    printf("    Compute a projection of a point cloud onto a mesh along given normals\n if No face is hit, the closest point on the target mesh is used");
-    printf("    Usage: trinorm_project <cloud> <mesh>\n");
-    printf("       <cloud>        Point cloud containing starting points, including normal information of vertices (PLY format).\n");
-    printf("       [-b | --tolout | --tolout ]        -b = check both directions of normal.\n");
-    printf("                                          --tolout = max distance to look in normal direction.\n");
-    printf("                                          --tolin = max distance to look in opposite direction of the normal.\n");
+    printf("    Compute a projection of a point cloud onto a mesh along given normals\n    if no face is hit, the closest point on the target mesh is used.\n");
+    printf("    Usage: trinorm_project <cloud> [options] <mesh>\n");
+    printf("       <cloud>        Point cloud containing starting points, including normal\n");
+    printf("                      information of vertices (PLY format).\n");
+    printf("            -b = check both directions of normal.\n");
+    printf("            --tolout <float> = max distance to look in normal direction.\n");
+    printf("            --tolin <float> = max distance to look in opposite direction of the normal.\n");
     printf("       <mesh>         Mesh model over which to project (PLY format).\n");
     printf("\n");
     printf("Saves the projected point cloud in the file out_norm.ply when terminated.\n");
