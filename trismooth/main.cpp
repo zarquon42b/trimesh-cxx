@@ -127,7 +127,7 @@ int main(int argc,char ** argv){
   int dup = tri::Clean<MyMesh>::RemoveDuplicateVertex(mesh);
         int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
   if (dup > 0 || unref > 0)
-                printf("Removed %i duplicate and %i unreferenced vertices from mesh %s\n",dup,unref,argv[2]);
+                printf("Removed %i duplicate and %i unreferenced vertices from mesh %s\n",dup,unref,argv[1]);
   tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   //tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
