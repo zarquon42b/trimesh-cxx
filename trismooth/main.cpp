@@ -4,6 +4,7 @@
 #include <string.h>
 #include <vector>
 using namespace std;
+#include <stdio.h>
 
 // VCG headers for triangular mesh processing
 #include<vcg/simplex/edge/base.h>
@@ -45,26 +46,60 @@ typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 //typedef vcg::SpatialHashTable<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
-	char filename[256];
+        char filename[256];
+        int iteration;
+        float lambda;
+        bool lcheck=false;
+        bool icheck=false;
+        bool noout=false;
   if (argc< 3){
-		printf("\n");
-    printf("    Smooth a mesh using a taubin smooth\n");
-    printf("    Usage: trismooth <input.mesh> <output.ply>\n");
-    printf("       <input.mesh>        any common mesh file (any common mesh file).\n");
-    printf("       <output.ply>        smoothed mesh with taubin smooth applied (PLY Format).\n");
-    
+          printf("\n");
+          printf("    Smooth a mesh using a taubin smooth\n");
+          printf("    Usage: trismooth <input.mesh> <output.ply>\n");
+          printf("       <input>        any common mesh file (any common mesh file).\n");
+          printf("       [-it <integer>]     smoothing iterations (default is 10).\n");
+          printf("       [-l <float>]        lambda value (default is 0.5).\n");
+          printf("       <output>            smoothed mesh with taubin smooth applied (PLY Format).\n");
+
    
 		return 0;
 	}
-  /*else if (argc == 2)
-	{
-	strcpy(filename, argv[1]);
-	}	
-	else if (argc == 3)
-	{*/
-	strcpy(filename, argv[2]);
-	//}
-	
+        for (int i = 1; i < argc; i++) {
+
+            if (i + 1 != argc) {// Check that we haven't finished parsing already
+
+                      if (strcmp("-l", argv[i]) == 0) {
+                      lambda = atof(argv[i + 1]);
+                      lcheck=true;
+                      if (i==argc-2)
+                      {noout=true;}
+                  }
+
+
+                  if (strcmp("-it", argv[i]) == 0) {
+                        iteration=atoi(argv[i + 1]);
+                        icheck=true;
+                        if (i== (argc-2))
+                        {noout=true;
+                        //printf("please specify output file");
+                        }
+
+                  }
+                }
+             }
+      //  printf("%i\n",argc);
+        if (lcheck == false)
+        {lambda=0.5;
+        }
+        if (icheck == false)
+        {iteration = 10;
+        }
+        if (noout==true)
+        {printf("Error: please specify output file\n");
+            return 0;
+        }
+
+        strcpy(filename, argv[argc-1]);
 	MyMesh mesh;
   
 	
@@ -97,7 +132,7 @@ int main(int argc,char ** argv){
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   //tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
   tri::UpdateNormals<MyMesh>::NormalizeVertex(mesh);
-  tri::Smooth<MyMesh>::VertexCoordTaubin(mesh,10,0.5,-0.53);
+  tri::Smooth<MyMesh>::VertexCoordTaubin(mesh,iteration,lambda,-0.53);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
   tri::UpdateNormals<MyMesh>::NormalizeVertex(mesh);
