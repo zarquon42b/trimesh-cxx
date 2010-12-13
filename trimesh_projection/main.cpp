@@ -47,15 +47,19 @@ typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 //typedef vcg::SpatialHashTable<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
-
-         char filename[256];
+         bool nosmooth = false;
+         char filename[256] = "out_cloud.ply";
     if (argc<3){
 
         printf("\n");
         printf("    Compute a projection of a point cloud onto a mesh\n");
-        printf("    Usage: trimesh_project <cloud> <mesh>\n");
-        printf("       <cloud>        Point cloud over which to project (PLY format).\n");
-        printf("       <mesh>         Mesh model over which to project (PLY format).\n");
+        printf("    Usage: trimesh_project <cloud> <mesh> [options]\n");
+
+        printf("       <cloud>        Point cloud over which to project (PLY|STL|OBJ format).\n");
+
+        printf("       <mesh>         Mesh model over which to project (PLY|STL|OBJ format).\n");
+        printf("       --nosmooth     don't smooth vertex normals.\n");
+        printf("       -o             specify output file (PLY format).\n");
         printf("\n");
         printf("Saves the projected point cloud in the file out_cloud.ply when terminated.\n");
         printf("The vertex coordinates represent the projected samples (in same order as input.\n");
@@ -63,16 +67,25 @@ int main(int argc,char ** argv){
 		return 0;
 	}
 
-    else if (argc == 3)
-            {
-            strcpy(filename, "out_cloud.ply");
+
+    for (int i = 1; i < argc; i++) {
+  if (i + 1 != argc) {// Check simple switches
+
+                        if (strcmp("-o", argv[i]) == 0)
+                        {strcpy(filename, argv[i+1]);;
+                        }
+                    }
             }
-            else
-            {
-            strcpy(filename, argv[3]);
+    for (int i = 1; i < argc; i++) {
+  if (i  != argc) {// Check options with arguments
+
+                        if (strcmp("--nosmooth", argv[i]) == 0)
+                        {nosmooth=true;
+                        }
             }
-  
-	MyMesh mesh;
+}
+
+    MyMesh mesh;
   MyMesh in_cloud;
   MyMesh out_cloud;
 	
@@ -88,7 +101,7 @@ int main(int argc,char ** argv){
 	}
   int err2 = tri::io::Importer<MyMesh>::Open(mesh,argv[2]);
   if(err2) {
-		printf("Error in reading %s: '%s'\n",argv[2],tri::io::Importer<MyMesh>::ErrorMsg(err2));
+                printf("Error in reading %s: '%s'\n",argv[2],tri::io::Importer<MyMesh>::ErrorMsg(err2));
 		exit(-1);  
 	}
   // Allocate space for projected cloud
@@ -109,8 +122,10 @@ int main(int argc,char ** argv){
   tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
+  if (nosmooth == false)
+  {
   tri::Smooth<MyMesh>::VertexNormalLaplacian(mesh,2,false);
-
+}
   tri::UpdateNormals<MyMesh>::NormalizeVertex(mesh);
   tri::UpdateQuality<MyMesh>::VertexConstant(out_cloud, 0);  
   float maxDist = mesh.bbox.Diag();
