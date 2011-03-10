@@ -46,14 +46,17 @@ typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
     float thresh;
+    bool cloud = false;
+    bool noout = true;
     char filename[256];
   if (argc<4){
 		printf("\n");
     printf("    Compute a projection of a point cloud onto a mesh\n");
-    printf("    Usage: rayproject <reference mesh> < targetmesh> <threshold><output.ply>\n");
+    printf("    Usage: rayproject <reference mesh> < targetmesh> <threshold> <output.ply>\n");
     printf("       <reference mesh>        Point cloud over which to project (PLY format).\n");
     printf("       <target mesh>         Mesh model over which to project (PLY format).\n");
-    printf("       <threshold> - delimits max distance to seek along ray.\n");
+    printf("       -t <threshold> - delimits max distance to seek along ray.\n");
+     printf("      -cloud - vertex normals have to be computed individually.\n");
     printf("       optional: <output.ply> - define output filename (and path).\n");
 
     printf("\n");    
@@ -62,15 +65,38 @@ int main(int argc,char ** argv){
     printf("The vertex quality (requires ply files) represents the projection distance.\n");
 		return 0;
 	}
-    else if (argc == 4)
+
+
+  for (int i = 1; i < argc; i++) {
+
+      if (i + 1 != argc) {// Check that we haven't finished parsing already
+
+                if (strcmp("-cloud", argv[i]) == 0)
+                {
+                cloud = true;
+
+            }
+                if (strcmp("-t", argv[i]) == 0)
+                {
+                thresh = atof(argv[i + 1]);
+
+
+            }
+                if (strcmp("-o", argv[i]) == 0)
+                {
+                strcpy(filename, argv[i+1]);
+                if (i==argc-2)
+                {noout=false;}
+            }
+       }
+  }
+
+    if (noout == true)
           {
           strcpy(filename, "project.mesh.ply");
           }
-    else
-          {
-          strcpy(filename, argv[4]);
-          }
-    thresh=atof(argv[3]);
+
+   // thresh=atof(argv[3]);
     MyMesh mesh;
     MyMesh in_cloud;
     MyMesh out_cloud;
@@ -119,8 +145,11 @@ int main(int argc,char ** argv){
   //tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
   //tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(in_cloud);
   tri::UpdateBounding<MyMesh>::Box(in_cloud);
+  if (cloud == false)
+  {
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(in_cloud);
+}
   tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
   tri::UpdateQuality<MyMesh>::VertexConstant(in_cloud, 0);
 
@@ -168,8 +197,13 @@ int main(int argc,char ** argv){
 
         if (f_ptr && t < thresh)
             {MyMesh::CoordType tt = in_cloud.vert[i].P()+in_cloud.vert[i].N()*t;
-            out_cloud.vert[i].P()=tt;
+            int f_i = vcg::tri::Index(mesh, f_ptr);
+            MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
+            double t0;
+            t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
+            out_cloud.vert[i].N() = ti/t0;
             out_cloud.vert[i].Q() = t;
+            out_cloud.vert[i].P() = tt;
 
         }
         else
@@ -179,8 +213,13 @@ int main(int argc,char ** argv){
             if (f_ptr && t < thresh)
 
                 {MyMesh::CoordType tt = in_cloud.vert[i].P()+in_cloud.vert[i].N()*t;
-                out_cloud.vert[i].P()=tt;
+                int f_i = vcg::tri::Index(mesh, f_ptr);
+                MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
+                double t0;
+                t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
+                out_cloud.vert[i].N() = ti/t0;
                 out_cloud.vert[i].Q() = t;
+                out_cloud.vert[i].P() = tt;
 
             }
             else
@@ -189,11 +228,18 @@ int main(int argc,char ** argv){
                 Point3f& clost = out_cloud.vert[i].P();
                 MyFace* f_ptr=GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
                 out_cloud.vert[i].Q() = minDist;
+                int f_i = vcg::tri::Index(mesh, f_ptr);
+                MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
+                double t0;
+                t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
+                out_cloud.vert[i].N() = ti/t0;
+                out_cloud.vert[i].P() = clost;
             }
           }
 
     in_cloud.vert[i].P()=out_cloud.vert[i].P();
     in_cloud.vert[i].Q()=out_cloud.vert[i].Q();
+    in_cloud.vert[i].N()=out_cloud.vert[i].N();
     }
   //--------------------------------------------------------------------------------------//
   //
@@ -205,11 +251,13 @@ int main(int argc,char ** argv){
 
 
   tri::UpdateBounding<MyMesh>::Box(in_cloud);
-  tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
-  tri::Smooth<MyMesh>::VertexNormalLaplacian(in_cloud,2,false);
-  tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
-  //tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
+  if (cloud == false)
+    {
+    tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
+    tri::Smooth<MyMesh>::VertexNormalLaplacian(in_cloud,2,false);
+    tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
 
+    }
   int t2 = clock();
   tri::io::ExporterPLY<MyMesh>::Save(in_cloud,filename,tri::io::Mask::IOM_VERTNORMAL +tri::io::Mask::IOM_VERTQUALITY, false); // in ASCII
   printf("Completed projection of %d sample in %i msec\n", in_cloud.vn, t2-t1);
@@ -218,3 +266,4 @@ int main(int argc,char ** argv){
   //printf("%i ",tt);
   return 0;
 }
+
