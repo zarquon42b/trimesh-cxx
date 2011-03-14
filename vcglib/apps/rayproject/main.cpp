@@ -45,19 +45,19 @@ typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 //typedef vcg::SpatialHashTable<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
-    float thresh;
+    float thresh = 10;
     bool cloud = false;
     bool noout = true;
     char filename[256];
   if (argc<4){
 		printf("\n");
     printf("    Compute a projection of a point cloud onto a mesh\n");
-    printf("    Usage: rayproject <reference mesh> < targetmesh> <threshold> <output.ply>\n");
+    printf("    Usage: rayproject <reference mesh> < targetmesh> [-t | -cloud | -o] \n");
     printf("       <reference mesh>        Point cloud over which to project (PLY format).\n");
     printf("       <target mesh>         Mesh model over which to project (PLY format).\n");
-    printf("       -t <threshold> - delimits max distance to seek along ray.\n");
+    printf("       -t <threshold> - delimits max distance to seek along ray. default is 10\n");
      printf("      -cloud - vertex normals have to be computed individually.\n");
-    printf("       optional: <output.ply> - define output filename (and path).\n");
+    printf("       -o <output.ply> - define output filename (and path) default is project.mesh.ply.\n");
 
     printf("\n");    
     printf("projects the vertices of the reference mesh onto the target mesh when terminated.\n");
