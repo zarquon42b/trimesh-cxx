@@ -2,6 +2,7 @@
 // Date: 26 November 2010
 #include <string.h>
 #include <vector>
+
 using namespace std;
 
 // VCG headers for triangular mesh processing
@@ -56,7 +57,7 @@ int main(int argc,char ** argv){
     printf("       <reference mesh>        Point cloud over which to project (PLY format).\n");
     printf("       <target mesh>         Mesh model over which to project (PLY format).\n");
     printf("       -t <threshold> - delimits max distance to seek along ray. default is 10\n");
-     printf("      -cloud - vertex normals have to be computed individually.\n");
+    printf("       -cloud - vertex normals have to be computed individually.\n");
     printf("       -o <output.ply> - define output filename (and path) default is project.mesh.ply.\n");
 
     printf("\n");    
@@ -182,7 +183,7 @@ int main(int argc,char ** argv){
   //
   //--------------------------------------------------------------------------------------//
   int t1=clock();
-   int count = 1;
+   //int count = 1;
   for(int i=0; i<in_cloud.vn; i++){
 
     vcg::Ray3f ray;
