@@ -15,7 +15,7 @@ using namespace std;
 #include <vcg/complex/trimesh/update/edges.h>
 #include <vcg/complex/trimesh/update/bounding.h>
 #include <vcg/complex/trimesh/update/quality.h>
-#include <vcg/complex/trimesh/update/color.h>
+
 #include <vcg/complex/trimesh/update/flag.h>
 #include <vcg/complex/trimesh/clean.h>
 #include <vcg/complex/intersection.h>
@@ -23,10 +23,12 @@ using namespace std;
 #include <vcg/space/index/spatial_hashing.h>
 #include <vcg/complex/trimesh/closest.h>
 #include <vcg/complex/trimesh/smooth.h>
+
 // VCG File Format Importer/Exporter
 #include <wrap/io_trimesh/import.h>
 #include <wrap/io_trimesh/export.h>
 #include <wrap/io_trimesh/export_ply.h>
+#include <vcg/complex/trimesh/update/color.h>
 
 using namespace vcg;
 

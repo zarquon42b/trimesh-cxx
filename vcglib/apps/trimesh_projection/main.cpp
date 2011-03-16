@@ -14,7 +14,7 @@ using namespace std;
 #include <vcg/complex/trimesh/update/edges.h>
 #include <vcg/complex/trimesh/update/bounding.h>
 #include <vcg/complex/trimesh/update/quality.h>
-#include <vcg/complex/trimesh/update/color.h>
+
 #include <vcg/complex/trimesh/update/flag.h>
 #include <vcg/complex/trimesh/clean.h>
 #include <vcg/complex/trimesh/smooth.h>
@@ -28,7 +28,7 @@ using namespace std;
 #include <wrap/io_trimesh/import.h>
 #include <wrap/io_trimesh/export.h>
 #include <wrap/io_trimesh/export_ply.h>
-
+#include <vcg/complex/trimesh/update/color.h>
 using namespace vcg;
 
 class MyFace;
