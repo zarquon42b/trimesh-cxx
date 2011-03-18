@@ -49,7 +49,10 @@ int main(int argc,char ** argv){
     float thresh = 10;
     bool cloud = false;
     bool noout = true;
+    bool inbound = false;
+    bool strict = false;
     char filename[256];
+
   if (argc<4){
 		printf("\n");
     printf("    Compute a projection of a point cloud onto a mesh\n");
@@ -58,6 +61,9 @@ int main(int argc,char ** argv){
     printf("       <target mesh>         Mesh model over which to project (PLY format).\n");
     printf("       -t <threshold> - delimits max distance to seek along ray. default is 10\n");
     printf("       -cloud - vertex normals have to be computed individually.\n");
+    printf("       --inbound - search will be along oposite of normal first.\n");
+    printf("       --strict - this options will write the value 1e12 into Vertex quality.\n");
+    printf("                  if no face is hit by the ray.\n");
     printf("       -o <output.ply> - define output filename (and path) default is project.mesh.ply.\n");
 
     printf("\n");    
@@ -87,6 +93,16 @@ int main(int argc,char ** argv){
                 {
                 strcpy(filename, argv[i+1]);
                 if (i==argc-2)
+                {noout=false;}
+            }
+                if (strcmp("--inbound", argv[i]) == 0)
+                {
+                inbound = true;
+                {noout=false;}
+            }
+                if (strcmp("--strict", argv[i]) == 0)
+                {
+                strict = true;
                 {noout=false;}
             }
        }
@@ -190,6 +206,9 @@ int main(int argc,char ** argv){
     Point3f orig = in_cloud.vert[i].P();
     Point3f dir = in_cloud.vert[i].N();
 
+    if (inbound == true)
+        {dir = -dir;
+    }
     ray.SetOrigin(orig);
     ray.SetDirection(dir);
 
@@ -228,7 +247,13 @@ int main(int argc,char ** argv){
                 Point3f& currp = in_cloud.vert[i].P();
                 Point3f& clost = out_cloud.vert[i].P();
                 MyFace* f_ptr=GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
-                out_cloud.vert[i].Q() = minDist;
+                if (strict == false)
+                    { out_cloud.vert[i].Q() = minDist;
+                }
+                else
+                    {out_cloud.vert[i].Q() = 1e12;
+                }
+
                 int f_i = vcg::tri::Index(mesh, f_ptr);
                 MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
                 double t0;
