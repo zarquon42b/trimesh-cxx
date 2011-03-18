@@ -53,10 +53,10 @@ int main(int argc,char ** argv){
     bool strict = false;
     char filename[256];
 
-  if (argc<4){
+  if (argc < 3){
 		printf("\n");
-    printf("    Compute a projection of a point cloud onto a mesh\n");
-    printf("    Usage: rayproject <reference mesh> < targetmesh> [-t | -cloud | -o] \n");
+    printf("    Compute a projection of a point cloud onto a mesh along given rays\n");
+    printf("    Usage: rayproject <reference mesh> < targetmesh> [-t | -cloud | --inbound | --strict | -o] \n");
     printf("       <reference mesh>        Point cloud over which to project (PLY format).\n");
     printf("       <target mesh>         Mesh model over which to project (PLY format).\n");
     printf("       -t <threshold> - delimits max distance to seek along ray. default is 10\n");
