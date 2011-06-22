@@ -216,7 +216,7 @@ int main(int argc,char ** argv){
         MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
 
         if (f_ptr && t < thresh)
-            {MyMesh::CoordType tt = in_cloud.vert[i].P()+in_cloud.vert[i].N()*t;
+            {MyMesh::CoordType tt = in_cloud.vert[i].P()+dir*t;
             int f_i = vcg::tri::Index(mesh, f_ptr);
             MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
             double t0;
@@ -232,7 +232,7 @@ int main(int argc,char ** argv){
             ray.SetDirection(-dir);
             if (f_ptr && t < thresh)
 
-                {MyMesh::CoordType tt = in_cloud.vert[i].P()+in_cloud.vert[i].N()*t;
+                {MyMesh::CoordType tt = in_cloud.vert[i].P()+dir*t;
                 int f_i = vcg::tri::Index(mesh, f_ptr);
                 MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
                 double t0;
