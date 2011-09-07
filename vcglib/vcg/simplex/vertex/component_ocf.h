@@ -37,7 +37,7 @@ Revision 1.13  2008/02/05 20:42:43  cignoni
 Other small typos
 
 Revision 1.12  2008/02/04 21:26:49  ganovelli
-added ImportLocal which imports all local attributes into vertexplus and faceplus.
+added ImportData which imports all local attributes into vertexplus and faceplus.
 A local attribute is everything (N(), C(), Q()....) except pointers to other simplices
 (i.e. FFAdj, VFAdj, VertexRef) which are set to NULL.
 Added some function for const attributes
@@ -174,47 +174,6 @@ public:
 		for(vi=lbegin;vi!=lend;++vi)
 				(*vi)._ovp=this;
 	}
-
-// this function is called by the specialized Reorder function, that is called whenever someone call the allocator::CompactVertVector
-void ReorderVert(std::vector<size_t> &newVertIndex )
-{
-	size_t i=0;
-	assert( (!ColorEnabled)         || ( CV.size() == newVertIndex.size() ) );
-	assert( (!MarkEnabled)          || ( MV.size() == newVertIndex.size() ) );
-	assert( (!NormalEnabled)        || ( NV.size() == newVertIndex.size() ) );
-	assert( (!VFAdjacencyEnabled)   || ( AV.size() == newVertIndex.size() ) );
-	assert( (!CurvatureEnabled)     || ( CuV.size() == newVertIndex.size() ) );
-	assert( (!CurvatureDirEnabled)  || ( CuDV.size() == newVertIndex.size() ) );
-	assert( (!RadiusEnabled)        || ( RadiusV.size() == newVertIndex.size() ) );
-	assert( (!TexCoordEnabled)       || ( TV.size() == newVertIndex.size() ) );
-
-	for(i=0;i<newVertIndex.size();++i)
-		{
-			if(newVertIndex[i] != std::numeric_limits<size_t>::max() )
-				{
-					assert(newVertIndex[i] <= i);
-					if (ColorEnabled)			    CV[newVertIndex[i]] =  CV[i];
-					if (MarkEnabled)				  MV[newVertIndex[i]] =  MV[i];
-					if (NormalEnabled)        NV[newVertIndex[i]] =  NV[i];
-					if (VFAdjacencyEnabled)   AV[newVertIndex[i]] =  AV[i];
-					if (CurvatureEnabled)     CuV[newVertIndex[i]] = CuV[i];
-					if (CurvatureDirEnabled)  CuDV[newVertIndex[i]] =CuDV[i];
-					if (RadiusEnabled)        RadiusV[newVertIndex[i]] = RadiusV[i];
-					if (TexCoordEnabled)        TV[newVertIndex[i]] = TV[i];
-				}
-		}
-
-	if (ColorEnabled)         CV.resize(BaseType::size());
-	if (MarkEnabled)          MV.resize(BaseType::size());
-	if (NormalEnabled)        NV.resize(BaseType::size());
-	if (VFAdjacencyEnabled)   AV.resize(BaseType::size());
-	if (CurvatureEnabled)     CuV.resize(BaseType::size());
-	if (CurvatureDirEnabled)  CuDV.resize(BaseType::size());
-	if (RadiusEnabled)  RadiusV.resize(BaseType::size());
-	if (TexCoordEnabled)  TV.resize(BaseType::size());
-}
-
-
 
 ////////////////////////////////////////
 // Enabling Eunctions
@@ -391,14 +350,9 @@ public:
         return (*this).Base().AV[(*this).Index()]._zp;
     }
     template <class LeftV>
-	void ImportLocal(const LeftV & leftV)
+	void ImportData(const LeftV & leftV)
 	{
-		if((*this).Base().VFAdjacencyEnabled) // init the data only if they are enabled!
-			{
-				VFp() = NULL;
-				VFi() = -1;
-			}
-		T::ImportLocal(leftV);
+		T::ImportData(leftV);
 	}
 
   static bool HasVFAdjacency()   {   return true; }
@@ -431,10 +385,10 @@ public:
 		return (*this).Base().NV[(*this).Index()];  }
 
 	template <class LeftV>
-	void ImportLocal(const LeftV & leftV){
+	void ImportData(const LeftV & leftV){
 			if((*this).Base().NormalEnabled && leftV.Base().NormalEnabled ) // copy the data only if they are enabled in both vertices
 				N().Import(leftV.cN());
-			T::ImportLocal(leftV);}
+			T::ImportData(leftV);}
 };
 
 template <class T> class Normal3sOcf: public NormalOcf<vcg::Point3s, T> {};
@@ -449,11 +403,11 @@ public:
 	ColorType &C() { assert((*this).Base().ColorEnabled); return (*this).Base().CV[(*this).Index()]; }
 	const ColorType &cC() const { assert((*this).Base().ColorEnabled); return (*this).Base().CV[(*this).Index()]; }
 	template <class LeftV>
-	void ImportLocal(const LeftV & leftV)
+	void ImportData(const LeftV & leftV)
 		{
 			if((*this).Base().ColorEnabled && leftV.Base().ColorEnabled ) // copy the data only if they are enabled in both vertices
 					C() = leftV.cC();
-			T::ImportLocal(leftV);
+			T::ImportData(leftV);
 		}
 
 	static bool HasColor()   { return true; }
@@ -468,13 +422,14 @@ template <class A, class T> class QualityOcf: public T {
 public:
 	typedef A QualityType;
 	QualityType &Q() { assert((*this).Base().QualityEnabled); return (*this).Base().QV[(*this).Index()]; }
+	const QualityType &cQ() const { assert((*this).Base().QualityEnabled); return (*this).Base().QV[(*this).Index()]; }
 	template <class LeftV>
-	void ImportLocal(const LeftV & leftV)
+	void ImportData(const LeftV & leftV)
 		{
 //			if((*this).Base().QualityEnabled && leftV.Base().QualityEnabled ) // copy the data only if they are enabled in both vertices
       if((*this).Base().QualityEnabled && leftV.HasQuality() ) // copy the data only if they are enabled in both vertices
 						Q() = leftV.cQ();
-			T::ImportLocal(leftV);
+			T::ImportData(leftV);
 		}
 	static bool HasQuality()   { return true; }
 	static bool HasQualityOcf()   { assert(!T::HasQualityOcf()); return true; }
@@ -491,12 +446,12 @@ public:
   TexCoordType &T() {  assert((*this).Base().TexCoordEnabled); return (*this).Base().TV[(*this).Index()]; }
   const TexCoordType &cT() const {  assert((*this).Base().TexCoordEnabled); return (*this).Base().TV[(*this).Index()]; }
 	template < class LeftV>
-	void ImportLocal(const LeftV & leftV)
+	void ImportData(const LeftV & leftV)
 		{
 			//if((*this).Base().TexCoordEnabled && leftV.Base().TexCoordEnabled ) // WRONG I do not know anything about leftV!
 		if((*this).Base().TexCoordEnabled) // copy the data only if they are enabled in both vertices
 						T() = leftV.cT();
-			TT::ImportLocal(leftV);
+			TT::ImportData(leftV);
 		}
 	static bool HasTexCoord()   { return true; }
 	static bool HasTexCoordOcf()   { assert(!TT::HasTexCoordOcf()); return true; }
@@ -520,12 +475,12 @@ public:
 	}
 
 	template <class LeftV>
-	void ImportLocal(const LeftV & leftV)
+	void ImportData(const LeftV & leftV)
 	{
 		//if((*this).Base().MarkEnabled && leftV.Base().MarkEnabled ) // WRONG I do not know anything about leftV!
 		if((*this).Base().MarkEnabled) // copy the data only if they are enabled in both vertices
 				IMark() = leftV.IMark();
-		T::ImportLocal(leftV);
+		T::ImportData(leftV);
 	}
 	static bool HasMark()   { return true; }
 	static bool HasMarkOcf()   { return true; }
@@ -546,14 +501,14 @@ public:
 	const ScalarType &cKg() const { assert((*this).Base().CurvatureEnabled); return (*this).Base().CuV[(*this).Index()][1];}
 
 	template <class LeftV>
-	void ImportLocal(const LeftV & leftV){
+	void ImportData(const LeftV & leftV){
 //		if((*this).Base().CurvatureEnabled && leftV.Base().CurvatureEnabled ) // WRONG I do not know anything about leftV!
       if((*this).Base().CurvatureEnabled && LeftV::IsCurvatureEnabled(&leftV))
 			{
 				(*this).Base().CuV[(*this).Index()][0] = leftV.cKh();
 				(*this).Base().CuV[(*this).Index()][1] = leftV.cKg();
 			}
-		TT::ImportLocal(leftV);
+		TT::ImportData(leftV);
 	}
 
   static bool HasCurvature() { return true; }
@@ -598,7 +553,7 @@ public:
 	const ScalarType &cK2()const  {assert((*this).Base().CurvatureDirEnabled); return (*this).Base().CuDV[(*this).Index()].k2;}
 
   template <class LeftV>
-  void ImportLocal(const LeftV & leftV){
+	void ImportData(const LeftV & leftV){
 //		if((*this).Base().CurvatureEnabled && leftV.Base().CurvatureEnabled ) // WRONG I do not know anything about leftV!
     if((*this).Base().CurvatureDirEnabled && LeftV::IsCurvatureDirEnabled(&leftV))
       {
@@ -607,7 +562,7 @@ public:
         (*this).K1() = leftV.cK1();
         (*this).K2() = leftV.cK2();
       }
-    TT::ImportLocal(leftV);
+		TT::ImportData(leftV);
   }
   static bool HasCurvatureDir()  { return true; }
   static bool HasCurvatureDirOcf()  { return true; }
@@ -636,12 +591,12 @@ public:
 	const RadiusType &cR() const { assert((*this).Base().RadiusEnabled); return (*this).Base().RadiusV[(*this).Index()];}
 
 	template <class LeftV>
-	void ImportLocal(const LeftV & leftV)
+	void ImportData(const LeftV & leftV)
 	{
 		//if ((*this).Base().RadiusEnabled && leftV.Base().RadiusEnabled ) // WRONG I do not know anything about leftV!
 		if ((*this).Base().RadiusEnabled) 
 			(*this).Base().RadiusV[(*this).Index()] = leftV.cR();
-		TT::ImportLocal(leftV);
+		TT::ImportData(leftV);
 	}
 
 	static bool HasRadius()     { return true; }
@@ -660,7 +615,7 @@ template <class T> class RadiusdOcf: public RadiusOcf<double, T> {};
 template < class T> class InfoOcf: public T {
 public:
     // You should never ever try to copy a vertex that has OCF stuff.
-    // use ImportLocal function.
+		// use ImportData function.
     inline InfoOcf &operator=(const InfoOcf & /*other*/) {
         assert(0); return *this;
     }
@@ -688,6 +643,13 @@ namespace tri
 {
 
 	template < class, class,class, class> class TriMesh;
+
+	template < class VertexType, class ContainerType0, class Container1, class Container2  >
+		bool HasPerVertexVFAdjacency (const TriMesh < vertex::vector_ocf< VertexType > , ContainerType0, Container1, Container2 > & m)
+	{
+		if(VertexType::HasVFAdjacencyOcf()) return m.vert.IsVFAdjacencyEnabled();
+		else return VertexType::HasVFAdjacency();
+	}
 
 	template < class VertexType, class ContainerType0, class ContainerType1 ,class ContainerType2 >
 	bool HasPerVertexRadius (const TriMesh < vertex::vector_ocf< VertexType > , ContainerType0,   ContainerType1,  ContainerType2 > & m)
@@ -738,11 +700,6 @@ namespace tri
 		else return VertexType::HasCurvatureDir();
 	}
 
-	template < class VertexType >
-	void ReorderVert( std::vector<size_t>  &newVertIndex, vertex::vector_ocf< VertexType > &vertVec)
-		{
-			vertVec.ReorderVert(newVertIndex);
-		}
 }
 }// end namespace vcg
 #endif

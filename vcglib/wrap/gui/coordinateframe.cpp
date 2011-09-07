@@ -48,6 +48,7 @@ first version
 #include <wrap/gl/math.h>
 #include <wrap/gl/space.h>
 #include <wrap/gl/addons.h>
+#include <wrap/qt/gl_label.h>
 
 #include "coordinateframe.h"
 
@@ -61,7 +62,7 @@ CoordinateFrame::CoordinateFrame(float s)
   font.setFamily("Helvetica");
 }
 
-void CoordinateFrame::Render(QGLWidget* glw)
+void CoordinateFrame::Render(QGLWidget* glw,QPainter* p)
 {
   assert( glw!= NULL);
   glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -73,7 +74,7 @@ void CoordinateFrame::Render(QGLWidget* glw)
   glEnable(GL_POINT_SMOOTH);
   glLineWidth(linewidth);
   glPointSize(linewidth*1.5);
-
+  glLabel::Mode md;
   Point3d o(0,0,0);
   Point3d a(size,0,0);
   Point3d b(0,size,0);
@@ -125,35 +126,35 @@ void CoordinateFrame::Render(QGLWidget* glw)
     glPopMatrix();
   }
   if(drawlabels){
-  	font.setBold(true);
-    font.setPixelSize(12);
+    md.qFont.setBold(true);
+    md.qFont.setPixelSize(12);
     float d=size+scalefactor*linewidth*1.5;
-    glColor(xcolor);
-    glw->renderText(d,0,0,QString("X"),font);
-    glColor(ycolor);
-    glw->renderText(0,d,0,QString("Y"),font);
-    glColor(zcolor);
-    glw->renderText(0,0,d,QString("Z"),font);
-  }  
+    if (p) {
+      vcg::glLabel::render(p,vcg::Point3f(d,0,0),QString("X"),md);
+      vcg::glLabel::render(p,vcg::Point3f(0,d,0),QString("Y"),md);
+      vcg::glLabel::render(p,vcg::Point3f(0,0,d),QString("Z"),md);
+    }
+  }
   if(drawvalues){
-  	font.setBold(false);  	
-    font.setPixelSize(8);
+    md.qFont.setBold(false);
+    md.qFont.setPixelSize(8);
+    md.color=Color4b(Color4b::LightGray);
     float i;
     glColor(Color4b::LightGray);
     for(i=slope_a;i<size;i+=slope_a){
-      glw->renderText( i,0,0,QString(" %1").arg(i,3,'f',1),font);
-      glw->renderText(-i,0,0,QString("-%1").arg(i,3,'f',1),font);
+      vcg::glLabel::render(p,vcg::Point3f( i,0,0),QString(" %1").arg(i,3,'f',1),md);
+      vcg::glLabel::render(p,vcg::Point3f(-i,0,0),QString(" %1").arg(i,3,'f',1),md);
     }
     for(i=slope_b;i<size;i+=slope_b){
-      glw->renderText(0, i,0,QString(" %1").arg(i,3,'f',1),font);
-      glw->renderText(0,-i,0,QString("-%1").arg(i,3,'f',1),font);
+      vcg::glLabel::render(p,vcg::Point3f(0, i,0),QString(" %1").arg(i,3,'f',1),md);
+      vcg::glLabel::render(p,vcg::Point3f(0,-i,0),QString(" %1").arg(i,3,'f',1),md);
     }
     for(i=slope_c;i<size;i+=slope_c){
-      glw->renderText(0,0, i,QString(" %1").arg(i,3,'f',1),font);
-      glw->renderText(0,0,-i,QString("-%1").arg(i,3,'f',1),font);
+      vcg::glLabel::render(p,vcg::Point3f(0,0, i),QString(" %1").arg(i,3,'f',1),md);
+      vcg::glLabel::render(p,vcg::Point3f(0,0,-i),QString(" %1").arg(i,3,'f',1),md);
     }
   }
-  
+  glGetError(); // Patch to buggy qt rendertext;
   glPopAttrib();
   assert(!glGetError());  
 }
@@ -188,10 +189,8 @@ float CoordinateFrame::calcSlope(const Point3d &a,const Point3d &b,float dim,int
 
   float tickNum = spacing/Distance(p2,p1);// pxl spacing
   float slope = dim*tickNum;
-  float nslope = math::Min(
-          math::Min(niceRound(slope), 0.5f*niceRound(2.0f*slope)), 
-                                      0.2f*niceRound(5.0f*slope));
-  nslope = math::Max<float>(niceRound(dim*.001f),nslope); // prevent too small slope
+  float nslope = math::Min(niceRound(slope), 0.5f*niceRound(2.0f*slope), 0.2f*niceRound(5.0f*slope));
+  nslope = std::max(niceRound(dim*.001f),nslope); // prevent too small slope
   return nslope;
 }
 

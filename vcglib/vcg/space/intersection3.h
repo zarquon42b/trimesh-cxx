@@ -20,122 +20,6 @@
  * for more details.                                                         *
  *                                                                           *
  ****************************************************************************/
-/****************************************************************************
-  History
-
-$Log: not supported by cvs2svn $
-Revision 1.33  2007/06/07 15:16:39  fiorin
-Added IntersectionSphereTriangle
-
-Revision 1.32  2007/05/29 14:33:29  fiorin
-Added IntersectionSegmentSphere
-
-Revision 1.31  2007/04/16 09:08:15  cignoni
-commented out non compiling intersectionSpherePlane
-
-Revision 1.30  2007/04/10 22:26:47  pietroni
-IntersectionPlanePlane first parameter is a const
-
-Revision 1.29  2007/04/04 23:19:40  pietroni
-- Changed name of intersection function between plane and triangle from Intersection to IntersectionPlaneTriangle.
-- Added Intersection_Plane_Sphere function.
-
-Revision 1.28  2007/02/21 02:40:52  m_di_benedetto
-Added const qualifier to bbox parameter in Intersection_Triangle_Box().
-
-Revision 1.27  2006/10/25 16:04:32  pietroni
-added intersection control between bounding boxes for intersection between segment and triangle function
-
-Revision 1.26  2006/09/14 08:39:07  ganovelli
-Intersection_sphere_sphere added
-
-Revision 1.25  2006/06/06 14:35:31  zifnab1974
-Changes for compilation on linux AMD64. Some remarks: Linux filenames are case-sensitive. _fileno and _filelength do not exist on linux
-
-Revision 1.24  2006/06/01 08:38:02  pietroni
-Added functions:
-
-- Intersection_Segment_Triangle
-- IntersectionPlaneBox
-- Intersection_Triangle_Box
-
-Revision 1.23  2006/03/29 07:53:36  cignoni
-Missing ';' (thx Maarten)
-
-Revision 1.22  2006/03/20 14:42:49  pietroni
-IntersectionSegmentPlane and IntersectionSegmentBox functions Added
-
-Revision 1.21  2006/01/20 16:35:51  pietroni
-added IntersectionSegmentBox function
-
-Revision 1.20  2005/10/03 16:07:50  ponchio
-Changed order of functions intersection_line_box and
-intersectuion_ray_box
-
-Revision 1.19  2005/09/30 13:11:39  pietroni
-corrected 1 compiling error on Ray_Box_Intersection function
-
-Revision 1.18  2005/09/29 15:30:10  pietroni
-Added function RayBoxIntersection, renamed intersection line box from "Intersection" to "Intersection_Line_Box"
-
-Revision 1.17  2005/09/29 11:48:00  m_di_benedetto
-Added functor RayTriangleIntersectionFunctor.
-
-Revision 1.16  2005/09/28 19:40:55  m_di_benedetto
-Added intersection for ray-triangle (with Ray3 type).
-
-Revision 1.15  2005/06/29 15:28:31  callieri
-changed intersection names to more specific to avoid ambiguity
-
-Revision 1.14  2005/03/15 11:22:39  ganovelli
-added intersection between tow planes (porting from old vcg lib)
-
-Revision 1.13  2005/01/26 10:03:08  spinelli
-aggiunta intersect  ray-box
-
-Revision 1.12  2004/10/13 12:45:51  cignoni
-Better Doxygen documentation
-
-Revision 1.11  2004/09/09 14:41:32  ponchio
-forgotten typename SEGMENTTYPE::...
-
-Revision 1.10  2004/08/09 09:48:43  pietroni
-correcter .dir to .Direction and .ori in .Origin()
-
-Revision 1.9  2004/08/04 20:55:02  pietroni
-added rey triangle intersections funtions
-
-Revision 1.8  2004/07/11 22:08:04  cignoni
-Added a cast to remove a warning
-
-Revision 1.7  2004/05/14 03:14:29  ponchio
-Fixed some minor bugs
-
-Revision 1.6  2004/05/13 23:43:54  ponchio
-minor bug
-
-Revision 1.5  2004/05/05 08:21:55  cignoni
-syntax errors in inersection plane line.
-
-Revision 1.4  2004/05/04 02:37:58  ganovelli
-Triangle3<T> replaced by TRIANGLE
-Segment<T> replaced by EDGETYPE
-
-Revision 1.3  2004/04/29 10:48:44  ganovelli
-error in plane segment corrected
-
-Revision 1.2  2004/04/26 12:34:50  ganovelli
-plane line
-plane segment
-triangle triangle added
-
-Revision 1.1  2004/04/21 14:22:27  cignoni
-Initial Commit
-
-
-****************************************************************************/
-
-
 
 #ifndef __VCGLIB_INTERSECTION_3
 #define __VCGLIB_INTERSECTION_3
@@ -224,7 +108,7 @@ namespace vcg {
 		int solution_count = 0;
 		if (ScalarType(0.0)<=lambda1 && lambda1<=ScalarType(1.0))
 		{
-			ScalarType t_enter = vcg::math::Max< ScalarType >(lambda1, ScalarType(0.0));
+      ScalarType t_enter = std::max< ScalarType >(lambda1, ScalarType(0.0));
 			t0 = segment.P0() + r*t_enter;
 			solution_count++;
 		}
@@ -232,7 +116,7 @@ namespace vcg {
 		if (ScalarType(0.0)<=lambda2 && lambda2<=ScalarType(1.0))
 		{
 			Point3t *pt = (solution_count>0) ? &t1 : &t0;
-			ScalarType t_exit  = vcg::math::Min< ScalarType >(lambda2, ScalarType(1.0));
+      ScalarType t_exit  = std::min< ScalarType >(lambda2, ScalarType(1.0));
 			*pt = segment.P0() + r*t_exit;
 			solution_count++;
 		}
@@ -325,8 +209,8 @@ namespace vcg {
 		if (res!=NULL)
 		{
 			ScalarType witness_norm = witness.Norm();
-			res->first  = vcg::math::Max< ScalarType >( witness_norm-radius, ScalarType(0.0) );
-			res->second = vcg::math::Max< ScalarType >( radius-witness_norm, ScalarType(0.0) );
+      res->first  = std::max< ScalarType >( witness_norm-radius, ScalarType(0.0) );
+      res->second = std::max< ScalarType >( radius-witness_norm, ScalarType(0.0) );
 		}
 		penetration_detected = (witness.SquaredNorm() <= (radius*radius));
 		witness += center;
@@ -352,8 +236,16 @@ namespace vcg {
     inline bool IntersectionPlaneSegment( const Plane3<T> & pl, const Segment3<T> & s, Point3<T> & p0){
 		T p1_proj = s.P1()*pl.Direction()-pl.Offset();
 		T p0_proj = s.P0()*pl.Direction()-pl.Offset();
-		if ( (p1_proj>0)-(p0_proj<0)) return false;
-		p0 =  s.P0() + (s.P1()-s.P0()) * fabs(p0_proj/(p1_proj-p0_proj));
+    if ( (p1_proj>0)-(p0_proj<0)) return false;
+
+    if(p0_proj == p1_proj) return false;
+
+    // check that we perform the computation in a way that is independent with v0 v1 swaps
+    if(p0_proj < p1_proj)
+           p0 =  s.P0() + (s.P1()-s.P0()) * fabs(p0_proj/(p1_proj-p0_proj));
+    if(p0_proj > p1_proj)
+           p0 =  s.P1() + (s.P0()-s.P1()) * fabs(p1_proj/(p0_proj-p1_proj));
+
 		return true;
   }
 
@@ -670,7 +562,7 @@ bool IntersectionSegmentTriangle( const vcg::Segment3<ScalarType> & seg,
 								   const Point3<ScalarType> & vert0, 
 									const Point3<ScalarType> & vert1, const
 									Point3<ScalarType> & vert2,
-									ScalarType & a ,ScalarType & b, ScalarType & dist)
+									ScalarType & a ,ScalarType & b)
 {
 	//control intersection of bounding boxes
 	vcg::Box3<ScalarType> bb0,bb1;
@@ -688,12 +580,14 @@ bool IntersectionSegmentTriangle( const vcg::Segment3<ScalarType> & seg,
 	//first set both directions of ray
   vcg::Line3<ScalarType> line;
 	vcg::Point3<ScalarType> dir;
+	ScalarType lenght=seg.Length();
 	dir=(seg.P1()-seg.P0());
 	dir.Normalize();
   line.Set(seg.P0(),dir);
-  if(IntersectionLineTriangle<ScalarType>(line,vert0,vert1,vert2,dist,a,b))
-    return (dist>=0 && dist<=1.0);
-    return false;
+	ScalarType orig_dist;
+  if(IntersectionLineTriangle<ScalarType>(line,vert0,vert1,vert2,orig_dist,a,b))
+    return (orig_dist<=lenght);
+  return false;
 }
 /**
 * Compute the intersection between a segment and a triangle.
@@ -702,31 +596,20 @@ bool IntersectionSegmentTriangle( const vcg::Segment3<ScalarType> & seg,
 template<class TriangleType>
 bool IntersectionSegmentTriangle( const vcg::Segment3<typename TriangleType::ScalarType> & seg,
                   const TriangleType &t,
-                  typename TriangleType::ScalarType & a ,typename TriangleType::ScalarType & b, typename TriangleType::ScalarType & dist)
+                  typename TriangleType::ScalarType & a ,typename TriangleType::ScalarType & b)
 {
-  return IntersectionSegmentTriangle(seg,t.P(0),t.P(1),t.P(2),a,b,dist);
+  return IntersectionSegmentTriangle(seg,t.P(0),t.P(1),t.P(2),a,b);
 }
 
 template<class ScalarType>
 bool IntersectionPlaneBox(const vcg::Plane3<ScalarType> &pl,
 							vcg::Box3<ScalarType> &bbox)
 {
-	typedef typename vcg::Segment3<ScalarType> SegmentType;
-	typedef typename vcg::Point3<ScalarType> CoordType;
-	SegmentType diag[4];
-	
-	CoordType intersection;
-	//find the 4 diagonals
-	diag[0]=SegmentType(bbox.P(0),bbox.P(7));
-	diag[1]=SegmentType(bbox.P(1),bbox.P(6));
-	diag[2]=SegmentType(bbox.P(2),bbox.P(5));
-	diag[3]=SegmentType(bbox.P(3),bbox.P(4));
-	ScalarType a,b,dist;
-	for (int i=0;i<3;i++)
-		//call intersection of segment and plane
-    if (vcg::IntersectionPlaneSegment(pl,diag[i],intersection))
-			return true;
-	return false;
+	ScalarType dist,dist1;
+	if(bbox.IsNull()) return false; // intersection with a  null bbox is empty
+	dist = Distance(pl,bbox.P(0)) ;
+	for (int i=1;i<8;i++)  if(  Distance(pl,bbox.P(i))*dist<0) return true;
+	return true;
 }
 
 ///if exists return the center and ardius of circle
@@ -779,7 +662,6 @@ bool IntersectionTriangleBox(const vcg::Box3<ScalarType>   &bbox,
 {
 	typedef typename vcg::Point3<ScalarType> CoordType;
 	CoordType intersection;
-
 	/// control bounding box collision
 	vcg::Box3<ScalarType> test;
 	test.SetNull();

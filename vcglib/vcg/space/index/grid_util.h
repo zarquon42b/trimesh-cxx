@@ -206,8 +206,8 @@ public:
 	/// Dato un box in voxel ritorna gli estremi del box reale
 	void IBoxToBox( const Box3i & ib, Box3x & b ) const
 	{
-		IPToP(ib.min,b.min);
-		IPToP(ib.max,b.max);
+		IPiToPf(ib.min,b.min);
+		IPiToPf(ib.max+Point3i(1,1,1),b.max);
 	}
 };
 
@@ -287,9 +287,9 @@ void BestDim( const Box3<scalar_type> box, const scalar_type voxel_size, Point3i
 			else if(size[2]>eps)
 				dim[2] = int(ncell);
 		}
-		dim[0] = math::Max(dim[0],1);
-		dim[1] = math::Max(dim[1],1);
-		dim[2] = math::Max(dim[2],1);
+    dim[0] = std::max(dim[0],1);
+    dim[1] = std::max(dim[1],1);
+    dim[2] = std::max(dim[2],1);
 	}
 }
 #endif

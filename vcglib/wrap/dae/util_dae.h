@@ -24,11 +24,10 @@
 #define __VCGLIB_UTILDAE
 
 
+#include <vcg/complex/append.h>
 #include <wrap/io_trimesh/additionalinfo.h>
-#include <vcg/complex/trimesh/update/normal.h>
-#include <vcg/complex/trimesh/update/position.h>
-#include <vcg/complex/trimesh/append.h>
-#include <vcg/complex/trimesh/allocate.h>
+#include <vcg/complex/algorithms/update/normal.h>
+#include <vcg/complex/algorithms/update/position.h>
 
 #include <wrap/io_trimesh/io_mask.h>
 
@@ -306,7 +305,7 @@ namespace io {
 		inline static void valueStringList(QStringList& res,const QDomNode srcnode,const QString& tag) 
 		{
 			QDomNodeList list = srcnode.toElement().elementsByTagName(tag);
-			assert(list.size() == 1);
+			//assert(list.size() == 1);
 			QString nd = list.at(0).firstChild().nodeValue();
 			res = nd.simplified().split(" ",QString::SkipEmptyParts);
             if(res.empty())

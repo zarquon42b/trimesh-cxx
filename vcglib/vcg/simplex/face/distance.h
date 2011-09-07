@@ -63,7 +63,7 @@ created
 #include <vcg/math/base.h>
 #include <vcg/space/point3.h>
 #include <vcg/space/segment3.h>
-
+#include <vcg/space/distance3.h>
 
 namespace vcg {
 	namespace face{
@@ -148,12 +148,14 @@ namespace vcg {
 			// vicini (come prodotto vettore)
 			// Nota: si potrebbe rendere un pochino piu' veloce sostituendo Area()
 			// con il prodotto vettore dei due edge in 2d lungo il piano migliore.
-                        if( (b=vcg::math::Min<ScalarType>(b0,vcg::math::Min<ScalarType>(b1,b2))) < EPS*DoubleArea(f))
+      if( (b=std::min(b0,std::min(b1,b2)) ) < EPS*DoubleArea(f))
       {
 				ScalarType bt;
 				if(b==b0) 	    bt = PSDist(q,f.V(1)->cP(),f.V(2)->cP(),p);
 				else if(b==b1) 	bt = PSDist(q,f.V(2)->cP(),f.V(0)->cP(),p);
-				else if(b==b2) 	bt = PSDist(q,f.V(0)->cP(),f.V(1)->cP(),p);
+        else {          assert(b==b2);
+                        bt = PSDist(q,f.V(0)->cP(),f.V(1)->cP(),p);
+                      }
                                 //printf("Warning area:%g %g %g %g thr:%g bt:%g\n",Area(), b0,b1,b2,EPS*Area(),bt);
 				if(dist>bt) { dist = bt; return true; }
 				else return false;
@@ -182,12 +184,14 @@ namespace vcg {
 				if(dist>b2) { dist = b2; return true; }
 				else return false;
 			}
-                        if( (b=vcg::math::Min<ScalarType>(b0,vcg::math::Min<ScalarType>(b1,b2))) < EPS*DoubleArea(f))
+                        if( (b=math::Min<ScalarType>(b0,b1,b2)) < EPS*DoubleArea(f))
       {
 				ScalarType bt;
 				if(b==b0) 	    bt = PSDist(q,f.V(1)->cP(),f.V(2)->cP(),p);
 				else if(b==b1) 	bt = PSDist(q,f.V(2)->cP(),f.V(0)->cP(),p);
-				else if(b==b2) 	bt = PSDist(q,f.V(0)->cP(),f.V(1)->cP(),p);
+        else { assert(b==b2);
+                        bt = PSDist(q,f.V(0)->cP(),f.V(1)->cP(),p);
+        }
 				//printf("Warning area:%g %g %g %g thr:%g bt:%g\n",Area(), b0,b1,b2,EPSILON*Area(),bt);
 				if(dist>bt) { dist = bt; return true; }
 				else return false;
@@ -216,12 +220,14 @@ namespace vcg {
 				if(dist>b2) { dist = b2; return true; }
 				else return false;
 			}
-                        if( (b=vcg::math::Min<ScalarType>(b0,vcg::math::Min<ScalarType>(b1,b2))) < EPS*DoubleArea(f))
+                        if( (b=math::Min<ScalarType>(b0,b1,b2)) < EPS*DoubleArea(f))
       {
 				ScalarType bt;
 				if(b==b0) 	    bt = PSDist(q,f.V(1)->cP(),f.V(2)->cP(),p);
 				else if(b==b1) 	bt = PSDist(q,f.V(2)->cP(),f.V(0)->cP(),p);
-				else if(b==b2) 	bt = PSDist(q,f.V(0)->cP(),f.V(1)->cP(),p);
+        else { assert(b==b2);
+                        bt = PSDist(q,f.V(0)->cP(),f.V(1)->cP(),p);
+        }
 				//printf("Warning area:%g %g %g %g thr:%g bt:%g\n",Area(), b0,b1,b2,EPSILON*Area(),bt);
 				
 				if(dist>bt) { dist = bt; return true; }
@@ -319,8 +325,11 @@ namespace vcg {
             Box3<ScalarType> bb;
             f.GetBBox(bb);
             Segment3<ScalarType> degenTri(bb.min,bb.max);
-            Point3<ScalarType> closest= ClosestPoint( degenTri, q );
-            ScalarType d = Distance(closest, q);
+            //Point3<ScalarType> closest= ClosestPoint( degenTri, q );
+						//ScalarType d = Distance(closest, q);
+						Point3<ScalarType> closest;
+            ScalarType d;
+						vcg::SegmentPointDistance<ScalarType>(degenTri,q,closest,d);
             if( d>dist || d<-dist )			// Risultato peggiore: niente di fatto
                       return false;
             dist=d;
@@ -400,7 +409,7 @@ namespace vcg {
 							// vicini (come prodotto vettore)
 							// Nota: si potrebbe rendere un pochino piu' veloce sostituendo Area()
 							// con il prodotto vettore dei due edge in 2d lungo il piano migliore.
-              if( (b=vcg::math::Min<ScalarType>(b0,vcg::math::Min<ScalarType>(b1,b2))) < EPS*DoubleArea(f))
+              if( (b=vcg::math::Min<ScalarType>(b0,b1,b2)) < EPS*DoubleArea(f))
 							{
 								ScalarType bt;
 								if(b==b0) 	    bt = PSDist(q,f.V(1)->cP(),f.V(2)->cP(),p);
@@ -437,7 +446,7 @@ namespace vcg {
 							if(dist>b2) { dist = b2; return true; }
 							else return false;
 						}
-            if( (b=vcg::math::Min<ScalarType>(b0,vcg::math::Min<ScalarType>(b1,b2))) < EPS*DoubleArea(f))
+            if( (b=vcg::math::Min<ScalarType>(b0,b1,b2)) < EPS*DoubleArea(f))
 							{
 								ScalarType bt;
 								if(b==b0) 	    bt = PSDist(q,f.V(1)->cP(),f.V(2)->cP(),p);
@@ -474,7 +483,7 @@ namespace vcg {
 							if(dist>b2) { dist = b2; return true; }
 							else return false;
 						}
-            if( (b=vcg::math::Min<ScalarType>(b0,vcg::math::Min<ScalarType>(b1,b2))) < EPS*DoubleArea(f))
+            if( (b=vcg::math::Min<ScalarType>(b0,b1,b2)) < EPS*DoubleArea(f))
 							{
 								ScalarType bt;
 								if(b==b0) 	    bt = PSDist(q,f.V(1)->cP(),f.V(2)->cP(),p);

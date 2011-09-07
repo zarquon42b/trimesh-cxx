@@ -86,9 +86,11 @@ Edited Comments and GPL license
 #ifndef __VCGLIB_MATH_BASE
 #define __VCGLIB_MATH_BASE
 
+#include <float.h>
 #include <math.h>
 #include <assert.h>
 #include <limits>
+#include <math.h>
 
 /// static_assert: implemented as a macro for "assert", but it is separated for clarity.
 /// Should be used for checking integrity constraints that can be tested at complile time,
@@ -137,12 +139,24 @@ namespace math {
 
 	template <typename T> inline static T Sqr(T a) { return a*a; }
 
-	template<class T> inline const T & Min(const T &a, const T &b){
-		if (a<b) return a; else return b;
+  template<class T> inline const T & Min(const T &a, const T &b,const T &c){
+    if (a<b) {
+      if(a<c) return a;
+         else return c;
+      } else {
+      if(b<c) return b;
+      else return c;
+      }
 	}
-	template<class T> inline const T & Max(const T &a, const T &b){
-		if (a<b) return b; else return a;
-	}
+  template<class T> inline const T & Max(const T &a, const T &b, const T &c){
+    if (a>b) {
+      if(a>c) return a;
+         else return c; // if c<a then c is smaller than b...
+      } else {
+      if(b>c) return b;
+      else return c;
+      }
+  }
 
 	template<class T> inline void Swap(T &a, T &b){
 		T tmp=a; a=b; b=tmp;
@@ -179,10 +193,11 @@ inline float   ToRad(const float &a){return float(M_PI)*a/180.0f;}
 inline double  ToDeg(const double &a){return a*180.0/M_PI;}
 inline double  ToRad(const double &a){return M_PI*a/180.0;}
 
+
 #if defined(_MSC_VER) // Microsoft Visual C++
-	template<class T> int IsNAN(T t) {    return _isnan(t); }
+template<class T> int IsNAN(T t) {    return _isnan(t) || (!_finite(t)); }
 #elif defined(__GNUC__) // GCC
-	template<class T> int IsNAN(T t) {    return isnan(t); }
+template<class T> int IsNAN(T t) {    return isnan(t) || isinf(t); }
 #else // generic
 
 template<class T> int IsNAN(T t)

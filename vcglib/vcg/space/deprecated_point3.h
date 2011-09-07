@@ -95,6 +95,7 @@ Edited doxygen comments
 #define __VCGLIB_POINT3
 
 #include <assert.h>
+#include <algorithm>
 #include <vcg/math/base.h>
 
 namespace vcg {
@@ -337,14 +338,14 @@ public:
 	/** 
 	 * Convert to polar coordinates from cartesian coordinates.
 	 *
-	 * Theta is the azimuth angle and ranges between [0, 360) degrees.
-	 * Phi is the elevation angle (not the polar angle) and ranges between [-90, 90] degrees.
+	 * Theta is the azimuth angle and ranges between [0, 2PI) degrees.
+	 * Phi is the elevation angle (not the polar angle) and ranges between [-PI/2, PI/2] degrees.
 	 *
 	 * /note Note that instead of the classical polar angle, which ranges between 
-	 *       0 and 180 degrees we opt for the elevation angle to obtain a more 
+	 *       0 and PI degrees we opt for the elevation angle to obtain a more 
 	 *       intuitive spherical coordinate system.
 	 */
-	void ToPolar(P3ScalarType &ro, P3ScalarType &theta, P3ScalarType &phi) const
+	void ToPolarRad(P3ScalarType &ro, P3ScalarType &theta, P3ScalarType &phi) const
 	{
 		ro = Norm();
 		theta = (P3ScalarType)atan2(_v[2], _v[0]);
@@ -354,14 +355,14 @@ public:
 	/**
 	 * Convert from polar coordinates to cartesian coordinates.
 	 *
-	 * Theta is the azimuth angle and ranges between [0, 360) degrees.
+	 * Theta is the azimuth angle and ranges between [0, 2PI) degrees.
 	 * Phi is the elevation angle (not the polar angle) and ranges between [-90, 90] degrees.
 	 *
 	 * \note Note that instead of the classical polar angle, which ranges between 
-	 *       0 and 180 degrees, we opt for the elevation angle to obtain a more 
+	 *       0 and PI degrees, we opt for the elevation angle to obtain a more 
 	 *       intuitive spherical coordinate system.
 	 */
-  void FromPolar(const P3ScalarType &ro, const P3ScalarType &theta, const P3ScalarType &phi)
+  void FromPolarRad(const P3ScalarType &ro, const P3ScalarType &theta, const P3ScalarType &phi)
 	{
     _v[0]= ro*cos(theta)*cos(phi);
     _v[1]= ro*sin(phi);
@@ -474,6 +475,21 @@ inline P3ScalarType SquaredDistance( Point3<P3ScalarType> const & p1,Point3<P3Sc
     return (p1-p2).SquaredNorm();
 }
 
+template <class P3ScalarType>
+P3ScalarType ApproximateGeodesicDistance(const Point3<P3ScalarType>& p0, const Point3<P3ScalarType>& n0,
+                                       const Point3<P3ScalarType>& p1, const Point3<P3ScalarType>& n1)
+{
+    Point3<P3ScalarType> V(p0-p1);
+    V.Normalize();
+    const P3ScalarType C0 = V*n0;
+    const P3ScalarType C1 = V*n1;
+    const P3ScalarType De = Distance(p0,p1);
+    if(fabs(C0-C1)<0.0001) return De/sqrt(1-C0*C1);
+    const P3ScalarType Dg = ((asin(C0) - asin(C1))/(C0-C1));
+    return Dg*De;
+}
+
+
 	// Dot product preciso numericamente (solo double!!)
 	// Implementazione: si sommano i prodotti per ordine di esponente
 	// (prima le piu' grandi)
@@ -556,7 +572,7 @@ inline Point3<SCALARTYPE> Abs(const Point3<SCALARTYPE> & p) {
 // probably a more uniform naming should be defined...
 template <class SCALARTYPE>
 inline Point3<SCALARTYPE> LowClampToZero(const Point3<SCALARTYPE> & p) {
-	return (Point3<SCALARTYPE>(math::Max(p[0], (SCALARTYPE)0), math::Max(p[1], (SCALARTYPE)0), math::Max(p[2], (SCALARTYPE)0)));
+  return (Point3<SCALARTYPE>(std::max(p[0], (SCALARTYPE)0), std::max(p[1], (SCALARTYPE)0), std::max(p[2], (SCALARTYPE)0)));
 }
 
 typedef Point3<short>  Point3s;

@@ -20,85 +20,11 @@
 * for more details.                                                         *
 *                                                                           *
 ****************************************************************************/
-/****************************************************************************
-  History
-
-$Log: not supported by cvs2svn $
-Revision 1.22  2008/03/13 08:48:10  granzuglia
-added two missing include files:
-1) #include <wrap/callback.h>
-2) #include <wrap/io_trimesh/io_mask.h>
-
-Revision 1.21  2007/12/13 17:57:33  cignoni
-removed harmless gcc warnings
-
-Revision 1.20  2007/03/12 16:40:17  tarini
-Texture coord name change!  "TCoord" and "Texture" are BAD. "TexCoord" is GOOD.
-
-Revision 1.19  2006/03/29 08:50:10  corsini
-Fix bug in texture coordinates reading
-
-Revision 1.18  2006/03/29 08:15:46  corsini
-Fix several bugs
-Add LoadMask
-Improve parsing capabilities (account for unexpected newline)
-
-Revision 1.17  2006/03/01 08:25:30  cignoni
-Corrected bug in wrong counting the parsed tokens during the reading of color components
-
-Revision 1.16  2006/02/28 15:18:10  corsini
-Fix loading mask update
-
-Revision 1.15  2006/02/09 15:56:34  corsini
-Update load mask
-
-Revision 1.14  2006/02/09 15:18:32  corsini
-*** empty log message ***
-
-Revision 1.12  2006/02/06 13:11:01  corsini
-Renamed UnexpectedEOF as InvalidFile and
-added UnsupportedFormat and ErrorNotTriangularFace (by Laurent Saboret)
-
-Revision 1.11  2006/01/30 15:02:50  cignoni
-Added mask filling in open
-
-Revision 1.10  2006/01/10 13:20:42  cignoni
-Changed ply::PlyMask to io::Mask
-
-Revision 1.9  2005/12/01 00:58:56  cignoni
-Added and removed typenames for gcc compiling...
-
-Revision 1.8  2005/11/12 18:12:16  cignoni
-Added casts and changed integral types to remove warnings
-
-Revision 1.7  2005/09/28 10:30:14  rita_borgo
-*** empty log message ***
-
-Revision 1.6  2005/01/26 22:44:51  cignoni
-Resolved scoping of constant of OFF codes
-
-Revision 1.5  2005/01/18 12:35:18  rita_borgo
-Added #include<vcg/complex/trimesh/allocate.h>
-it was giving problems with Allocator::
-
-Revision 1.4  2005/01/03 11:18:24  cignoni
-changed a .. rfind('OFF') .. in rfind("OFF") and added some casts
-
-Revision 1.3  2004/11/23 11:56:50  cignoni
-Corrected small bug in the tokenizer (it would add a fake token for lines ending with a space before /n)
-
-
-****************************************************************************/
-
 #ifndef __VCGLIB_IMPORT_OFF
 #define __VCGLIB_IMPORT_OFF
 
 #include <fstream>
-#include <string>
-#include <vector>
-#include <assert.h>
-#include <vcg/space/color4.h>
-#include<vcg/complex/trimesh/allocate.h>
+#include<vcg/complex/algorithms/bitquad_support.h>
 #include <wrap/callback.h>
 #include <wrap/io_trimesh/io_mask.h>
 
@@ -165,7 +91,7 @@ namespace vcg
 					// to distinguish between per-vertex and per-face color attribute.
           loadmask=0;
 					MESH_TYPE dummyMesh;
-					return (Open(dummyMesh, filename, loadmask,0,true)==NoError);
+          return (Open(dummyMesh, filename, loadmask)==NoError);
 				}
 
 				static int Open(MESH_TYPE &mesh, const char *filename,CallBackPos *cb=0)
@@ -182,7 +108,7 @@ namespace vcg
 				 *  \return             the operation result
 				 */
 				static int Open(MESH_TYPE &mesh, const char *filename, int &loadmask,
-					CallBackPos *cb=0, bool onlyMaskFlag=false )
+          CallBackPos *cb=0)
 				{
 					std::ifstream stream(filename);
 					if (stream.fail())
@@ -251,7 +177,7 @@ namespace vcg
 					if (isColorDefined)			{ loadmask |= Mask::IOM_VERTCOLOR;loadmask |= Mask::IOM_FACECOLOR;}
 
 
-          if(onlyMaskFlag) return NoError;
+          //if(onlyMaskFlag) return NoError;
 					
 					
 					mesh.Clear();
@@ -441,6 +367,12 @@ namespace vcg
 
 					Allocator<MESH_TYPE>::AddFaces(mesh, nFaces);
 					unsigned int f0=0;
+
+
+          // Initial call to the QuadTriangulate with an empty vector to just reset the static set of existing diagonals
+          std::vector<VertexPointer> qtmp;
+          BitQuad<MESH_TYPE>::QuadTriangulate(qtmp);
+
 					for (unsigned int f=0; f < nFaces; f++)
 					{
 						f0 = f;
@@ -489,30 +421,13 @@ namespace vcg
 								k++;
 							}
                             if(vert_per_face==4)
-                            {   // To well triangulate the quad:
-                                // if the quad is flat and convex we use the shortest diag ,
-                                // else we should use the diag that makes the smallest                                
-                                
-                                const CoordType &P0=mesh.vert[vertIndices[0]].cP();
-                                const CoordType &P1=mesh.vert[vertIndices[1]].cP();
-                                const CoordType &P2=mesh.vert[vertIndices[2]].cP();
-                                const CoordType &P3=mesh.vert[vertIndices[3]].cP();
-
-                                CoordType N00 = Normal(P0,P1,P2);
-                                CoordType N01 = Normal(P0,P2,P3);
-                                CoordType N10 = Normal(P1,P2,P3);
-                                CoordType N11 = Normal(P1,P3,P0);
-
-                                ScalarType Angle0Rad=Angle(N00,N01);
-                                ScalarType Angle1Rad=Angle(N10,N11);
-
-                                // QualityRadii is inradius/circumradius; bad when close to zero. 
-                                // swap diagonal if the worst triangle improve. 
-                                bool qualityImprove = std::min(QualityRadii(P0,P1,P2),QualityRadii(P0,P2,P3)) < std::min(QualityRadii(P1,P2,P3),QualityRadii(P1,P3,P0));
-                                bool swapCauseFlip = (Angle1Rad > M_PI/2.0) && (Angle0Rad <M_PI/2.0);
-                                if(qualityImprove && ! swapCauseFlip)
-                                        std::rotate(vertIndices.begin(), vertIndices.begin()+1, vertIndices.end());
-
+                            {   // To well triangulate use the bitquad support function that reorders vertex for a simple fan
+                                std::vector<VertexPointer> q(4);
+                                for(int qqi=0;qqi<4;++qqi)
+                                  q[qqi]=& mesh.vert[vertIndices[qqi]];
+                                BitQuad<MESH_TYPE>::QuadTriangulate(q);
+                                for(int qqi=0;qqi<4;++qqi)
+                                  vertIndices[qqi] = q[qqi]- & mesh.vert[0];
                             }
                             // standard fan triangulation (we hope the polygon is convex...)
                             for (int j=0; j<=vert_per_face-3; j++)
@@ -533,9 +448,13 @@ namespace vcg
 						// NOTE: It is assumed that colored face takes exactly one text line
 						//       (otherwise it is impossible to parse color information since
 						//        color components can vary)
-						if (isColorDefined && tri::HasPerFaceColor(mesh)) 
+            size_t color_elements = tokens.size() - vert_per_face-1;
+            isColorDefined |= (color_elements>0);
+            if(isColorDefined) loadmask |= Mask::IOM_FACECOLOR;
+
+            if( (color_elements>0)  && tri::HasPerFaceColor(mesh) )
 						{
-							size_t color_elements = tokens.size() - vert_per_face-1;
+
 
 							// set per-face color attribute
 							if (color_elements > 0)
@@ -616,7 +535,7 @@ namespace vcg
 				* \param stream	The object providing the input stream
 				*	\param tokens	The "tokens" in the next line
 				*/
-				inline static const void TokenizeNextLine(std::ifstream &stream, std::vector< std::string > &tokens)
+                                inline static void TokenizeNextLine(std::ifstream &stream, std::vector< std::string > &tokens)
 				{
 					std::string line;
 					do
@@ -634,7 +553,7 @@ namespace vcg
 						if(from!=length)
 						{
 							to = from+1;
-							while ( (line[to]!=' ' && line[to] != '\t'  || line[to] == '\r') && to!=length)
+                            while ( (((line[to]!=' ') && (line[to] != '\t'))  || (line[to] == '\r')) && to!=length)
 								to++;
 							tokens.push_back(line.substr(from, to-from).c_str());
 							from = to;

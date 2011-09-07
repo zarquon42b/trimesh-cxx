@@ -1,0 +1,21 @@
+Requirements:
+=============
+QT creator > 4.4 (http://qt.nokia.com/products/)
+a c++ compiler
+
+Compiling:
+==========
+extract archive
+
+open command shell
+navigate to vcglib/apps/[application to compile] e.g. vcglib/apps/trimesh_project
+now exectute the following commands:
+	qmake 
+	make
+
+Installing: 
+===========
+just add executable to system path (if you want to use it with the Morpho package)
+
+
+

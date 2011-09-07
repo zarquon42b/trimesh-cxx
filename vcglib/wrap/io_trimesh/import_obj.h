@@ -25,14 +25,15 @@
 #ifndef __VCGLIB_IMPORT_OBJ
 #define __VCGLIB_IMPORT_OBJ
 
+#include<vcg/complex/allocate.h>
 #include <wrap/callback.h>
-#include <vcg/complex/trimesh/allocate.h>
 #include <wrap/io_trimesh/io_mask.h>
 #include <wrap/io_trimesh/io_material.h>
 #ifdef __gl_h_
 #include <wrap/gl/glu_tesselator.h>
 #endif
 #include <vcg/space/color4.h>
+
 
 #include <fstream>
 #include <string>
@@ -260,7 +261,7 @@ public:
 	int numVerticesPlusFaces = oi.numVertices + oi.numFaces;
   int extraTriangles=0;
 	// vertices and faces allocatetion
-	VertexIterator vi = Allocator<OpenMeshType>::AddVertices(m,oi.numVertices);
+  VertexIterator vi = vcg::tri::Allocator<OpenMeshType>::AddVertices(m,oi.numVertices);
 	//FaceIterator   fi = Allocator<OpenMeshType>::AddFaces(m,oi.numFaces);
 
   ObjIndexedFace	ff; 
@@ -289,7 +290,21 @@ public:
 				// ----------------------
 					if (((oi.mask & vcg::tri::io::Mask::IOM_VERTCOLOR) != 0) && (m.HasPerVertexColor()))
 					{
-					(*vi).C() = currentColor;
+						if(numTokens>=7)
+						{
+							ScalarType rf(atof(tokens[4].c_str())), gf(atof(tokens[5].c_str())), bf(atof(tokens[6].c_str()));
+							ScalarType scaling = (rf<=1 && gf<=1 && bf<=1) ? 255. : 1;
+							
+							unsigned char r			= (unsigned char) ((ScalarType) atof(tokens[4].c_str()) * scaling);
+							unsigned char g			= (unsigned char) ((ScalarType) atof(tokens[5].c_str()) * scaling);
+							unsigned char b			= (unsigned char) ((ScalarType) atof(tokens[6].c_str()) * scaling);
+							unsigned char alpha = (unsigned char) ((numTokens>=8 ? (ScalarType) atof(tokens[7].c_str()) : 1)  * scaling);
+							(*vi).C() = Color4b(r, g, b, alpha);
+						}
+						else
+						{
+							(*vi).C() = currentColor;
+						}
 					}
 
 				++vi;  // move to next vertex iterator
@@ -626,7 +641,7 @@ public:
 	} // end while stream not eof
 	assert((numTriangles +numVertices) == numVerticesPlusFaces+extraTriangles);
 
-	FaceIterator   fi = Allocator<OpenMeshType>::AddFaces(m,numTriangles);
+	FaceIterator   fi = vcg::tri::Allocator<OpenMeshType>::AddFaces(m,numTriangles);
   //-------------------------------------------------------------------------------
 
 	// Now the final pass to convert indexes into pointers for face to vert/norm/tex references
@@ -685,7 +700,7 @@ public:
 				if (m.HasPerFaceNormal())
 				{
 					face::ComputeNormalizedNormal(m.face[i]);
-  }
+				}
 			}
 		}
 
@@ -699,7 +714,7 @@ public:
 	* \param stream	The object providing the input stream
 	*	\param tokens	The "tokens" in the next line
 	*/
-	inline static const void TokenizeNextLine(std::ifstream &stream, std::vector< std::string > &tokens)
+        inline static void TokenizeNextLine(std::ifstream &stream, std::vector< std::string > &tokens)
 	{
 		if(stream.eof()) return;
 		std::string line;
@@ -730,7 +745,7 @@ public:
 		while (from<length);
 	} // end TokenizeNextLine
 
-	inline static const void SplitToken(std::string token, int &vId, int &nId, int &tId, int mask)
+        inline static void SplitToken(std::string token, int &vId, int &nId, int &tId, int mask)
 	{
   		  std::string vertex;
 			  std::string texcoord;
@@ -746,12 +761,12 @@ public:
 		if(mask & Mask::IOM_WEDGNORMAL)   nId = atoi(normal.c_str())   - 1;
 	}
 
-	inline static const void SplitVToken(std::string token, std::string &vertex) 
+        inline static void SplitVToken(std::string token, std::string &vertex)
 	{
 		vertex = token; 
 	}
 
-	inline static const void SplitVVTToken(std::string token, std::string &vertex, std::string &texcoord)
+        inline static void SplitVVTToken(std::string token, std::string &vertex, std::string &texcoord)
 	{
 		vertex.clear();
 		texcoord.clear();
@@ -780,7 +795,7 @@ public:
 		}
 	}	// end of SplitVVTToken
 
-	inline static const void SplitVVNToken(std::string token, std::string &vertex, std::string &normal)
+        inline static void SplitVVNToken(std::string token, std::string &vertex, std::string &normal)
 	{
 		vertex.clear();
 		normal.clear();
@@ -810,7 +825,7 @@ public:
 		}
 	}	// end of SplitVVNToken
 
-	inline static const void SplitVVTVNToken(std::string token, std::string &vertex, std::string &texcoord, std::string &normal)
+        inline static void SplitVVTVNToken(std::string token, std::string &vertex, std::string &texcoord, std::string &normal)
 	{
 		vertex.clear();
 		texcoord.clear();
@@ -865,8 +880,9 @@ public:
 
     if (length == 0) return false;
 
-    bool bHasPerFaceColor			= false;
-	bool bHasNormals = false;
+		bool bHasPerFaceColor		= false;
+		bool bHasNormals 				= false;
+		bool bHasPerVertexColor = false;
 
     oi.numVertices=0;
     oi.numFaces=0;
@@ -886,7 +902,12 @@ public:
       {
         if(line[0]=='v')
         {
-          if(line[1]==' ') oi.numVertices++;
+          if(line[1]==' ')
+					{
+						oi.numVertices++;
+						if(line.size()>=7)
+							bHasPerVertexColor = true;
+					}
           if(line[1]=='t') oi.numTexCoords++;
           if(line[1]=='n') {
             oi.numNormals ++;
@@ -902,15 +923,16 @@ public:
 		}
 		oi.mask = 0;
 		if (oi.numTexCoords)	
-			{
-        if (oi.numTexCoords==oi.numVertices)
-          oi.mask |= vcg::tri::io::Mask::IOM_VERTTEXCOORD;
+		{
+			if (oi.numTexCoords==oi.numVertices)
+				oi.mask |= vcg::tri::io::Mask::IOM_VERTTEXCOORD;
 
 			oi.mask |= vcg::tri::io::Mask::IOM_WEDGTEXCOORD;
-				// Usually if you have tex coords you also have materials
-				oi.mask |= vcg::tri::io::Mask::IOM_FACECOLOR; 
-			}
-  if(bHasPerFaceColor) 				oi.mask |= vcg::tri::io::Mask::IOM_FACECOLOR; 
+			// Usually if you have tex coords you also have materials
+			oi.mask |= vcg::tri::io::Mask::IOM_FACECOLOR; 
+		}
+  if(bHasPerFaceColor)		oi.mask |= vcg::tri::io::Mask::IOM_FACECOLOR; 
+  if(bHasPerVertexColor)	oi.mask |= vcg::tri::io::Mask::IOM_VERTCOLOR; 
   if (bHasNormals) {
     if (oi.numTexCoords==oi.numVertices)
       oi.mask |= vcg::tri::io::Mask::IOM_VERTNORMAL;
@@ -966,51 +988,65 @@ public:
 					else
 						first = false;
 					//strcpy(currentMaterial.name, tokens[1].c_str());
-          if(tokens.size() < 2) 
+                                        if(tokens.size() < 2)
 						return false; 
 					currentMaterial.materialName=tokens[1];
 				}
 				else if (header.compare("Ka")==0)
 				{
-					float r = (float) atof(tokens[1].c_str());
-					float g = (float) atof(tokens[2].c_str());
-					float b = (float) atof(tokens[3].c_str());
+                                    if (tokens.size() < 4)
+                                        return false;
+                                    float r = (float) atof(tokens[1].c_str());
+                                    float g = (float) atof(tokens[2].c_str());
+                                    float b = (float) atof(tokens[3].c_str());
 
-					currentMaterial.Ka = Point3f(r, g, b); 
+                                    currentMaterial.Ka = Point3f(r, g, b);
 				}
 				else if (header.compare("Kd")==0)
 				{
-					float r = (float) atof(tokens[1].c_str());
-					float g = (float) atof(tokens[2].c_str());
-					float b = (float) atof(tokens[3].c_str());
+                                    if (tokens.size() < 4)
+                                        return false;
+                                    float r = (float) atof(tokens[1].c_str());
+                                    float g = (float) atof(tokens[2].c_str());
+                                    float b = (float) atof(tokens[3].c_str());
 
-          currentMaterial.Kd = Point3f(r, g, b); 
+                                    currentMaterial.Kd = Point3f(r, g, b);
 				}
 				else if (header.compare("Ks")==0)
 				{
-					float r = (float) atof(tokens[1].c_str());
-					float g = (float) atof(tokens[2].c_str());
-					float b = (float) atof(tokens[3].c_str());
+                                    if (tokens.size() < 4)
+                                        return false;
+                                    float r = (float) atof(tokens[1].c_str());
+                                    float g = (float) atof(tokens[2].c_str());
+                                    float b = (float) atof(tokens[3].c_str());
 
-          currentMaterial.Ks = Point3f(r, g, b); 
+                                    currentMaterial.Ks = Point3f(r, g, b);
 				}
 				else if (	(header.compare("d")==0) ||
 									(header.compare("Tr")==0)	)	// alpha
 				{
-          currentMaterial.Tr = (float) atof(tokens[1].c_str());
+                                    if (tokens.size() < 2)
+                                        return false;
+                                    currentMaterial.Tr = (float) atof(tokens[1].c_str());
 				}
 				else if (header.compare("Ns")==0)  // shininess        
 				{
-					currentMaterial.Ns = float(atoi(tokens[1].c_str()));
+                                    if (tokens.size() < 2)
+                                        return false;
+                                    currentMaterial.Ns = float(atoi(tokens[1].c_str()));
 				}
 				else if (header.compare("illum")==0)	// specular illumination on/off
 				{
-					int illumination = atoi(tokens[1].c_str());
-          //currentMaterial.bSpecular = (illumination == 2);
-          currentMaterial.illum = illumination;
+                                    if (tokens.size() < 2)
+                                        return false;
+                                    int illumination = atoi(tokens[1].c_str());
+                                    //currentMaterial.bSpecular = (illumination == 2);
+                                    currentMaterial.illum = illumination;
 				}
 				else if( (header.compare("map_Kd")==0)	|| (header.compare("map_Ka")==0) ) // texture name
 				{
+                                        if (tokens.size() < 2)
+                                            return false;
 					std::string textureName = tokens[1];
 					//strcpy(currentMaterial.textureFileName, textureName.c_str());
 					 currentMaterial.map_Kd=textureName;

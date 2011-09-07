@@ -28,7 +28,7 @@ Revision 1.12  2008/03/17 11:39:14  ganovelli
 added curvature and curvatruredir (compiled .net 2005 and gcc)
 
 Revision 1.11  2008/02/04 21:26:49  ganovelli
-added ImportLocal which imports all local attributes into vertexplus and faceplus.
+added ImportData which imports all local attributes into vertexplus and faceplus.
 A local attribute is everything (N(), C(), Q()....) except pointers to other simplices
 (i.e. FFAdj, VFAdj, VertexRef) which are set to NULL.
 Added some function for const attributes
@@ -57,7 +57,7 @@ Standardized name of flags. It is plural becouse each simplex has many flag.
 Revision 1.3  2005/11/12 18:36:51  cignoni
 Added 'Visited' flag functions
 
-Revision 1.2  2004/04/03 13:33:55  cignoni
+Revision 1.2  lags2004/04/03 13:33:55  cignoni
 Missing include
 
 Revision 1.1  2004/03/29 08:36:26  cignoni
@@ -71,8 +71,9 @@ First working version!
 //#include <vcg/space/point3.h>
 #include <vcg/space/texcoord2.h>
 #include <vcg/space/color4.h>
+#include <vcg/complex/all_types.h>
 #include <vcg/simplex/vertex/component.h>
-#include <vcg/complex/used_types.h>
+//#include <vcg/complex/used_types.h>
 #include <vcg/container/derivation_chain.h>
 
 namespace vcg {
@@ -95,7 +96,7 @@ These typenames must be known form all the derived classes.
 //  typedef BFT *FacePointer;
 //  typedef BTT *TetraPointer;
 //	template < class LeftV>
-//	void ImportLocal(const LeftV  & /* left */ ) { }
+//	void ImportData(const LeftV  & /* left */ ) { }
 //    static void Name(std::vector<std::string> & /* name */){}
 //
 //};

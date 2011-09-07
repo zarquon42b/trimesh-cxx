@@ -225,8 +225,8 @@ namespace io {
 		typedef typename SaveMeshType::VertexIterator VertexIterator;
 		typedef typename SaveMeshType::VertexType VertexType;
 		typedef typename SaveMeshType::FaceType FaceType;
-		typedef SimpleTempDataBase<typename SaveMeshType::VertContainer> STDBv;
-		typedef SimpleTempDataBase<typename SaveMeshType::FaceContainer> STDBf;
+    typedef SimpleTempDataBase STDBv;
+    typedef SimpleTempDataBase STDBf;
 	//	typedef typename SaveMeshType::Attribute <SaveMeshType::FaceContainer> STDBm;
 		
 		/* save Ocf Components */ 
@@ -271,15 +271,15 @@ namespace io {
 			/* end header */
 
 			if(vertSize!=0){
-				unsigned int offsetV = (unsigned int) &m.vert[0];
+                                void * offsetV =  (void*) &m.vert[0];
 				/* write the address of the first vertex */
-				fwrite(&offsetV,sizeof(unsigned int),1,F());
+                                fwrite(&offsetV,sizeof(void *),1,F());
 			}
 
 			if(faceSize!=0){
-				 int offsetF= ( int) &m.face[0];
+                                 void * offsetF= (void*)&m.face[0];
 				/* write the address of the first face */
-				fwrite(&offsetF,sizeof( int),1,F());
+                                fwrite(&offsetF,sizeof( void *),1,F());
 			}
 			/* save the object mesh */
 			fwrite(&m.shot,sizeof(Shot<typename SaveMeshType::ScalarType>),1,F());
@@ -369,7 +369,7 @@ namespace io {
 				for(ai = m.mesh_attr.begin(); ai != m.mesh_attr.end(); ++ai)
 					if(!(*ai)._name.empty())
 						{
-							AttributeBase  *    handle =  (AttributeBase  *)   (*ai)._handle ;
+              SimpleTempDataBase  *    handle =  (SimpleTempDataBase  *)   (*ai)._handle ;
 	
 							WriteString(F(),"PER_MESH_ATTR_NAME");
 							WriteString(F(),(*ai)._name.c_str());

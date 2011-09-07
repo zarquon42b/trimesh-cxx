@@ -8,7 +8,7 @@
 *                                                                    \      *
 * All rights reserved.                                                      *
 *                                                                           *
-* This program is free software; you can redistribute it and/or modify      *   
+* This program is free software; you can redistribute it and/or modify      *
 * it under the terms of the GNU General Public License as published by      *
 * the Free Software Foundation; either version 2 of the License, or         *
 * (at your option) any later version.                                       *
@@ -23,7 +23,7 @@
 
 #ifndef __VCG_EDGE_PLUS_COMPONENT
 #define __VCG_EDGE_PLUS_COMPONENT
-//#include <vector>
+#include <vector>
 #include <string>
 //#include <vcg/space/point3.h>
 //#include <vcg/space/texcoord2.h>
@@ -37,22 +37,24 @@ All the Components that can be added to a vertex should be defined in the namesp
 
 */
 
-/*-------------------------- VERTEX ----------------------------------------*/ 
+/*-------------------------- VERTEX ----------------------------------------*/
 template <class T> class EmptyVertexRef: public T {
 public:
- // typedef typename T::VertexType VertexType;
- // typedef typename T::CoordType CoordType;
-  inline typename T::VertexType *       & V( const int j ) 	    {	assert(0);		static typename T::VertexType *vp=0; return vp; }
-  inline typename T::VertexType * const & V( const int j ) const {	assert(0);		static typename T::VertexType *vp=0; return vp; }
-        inline typename T::VertexType *  cV( const int j ) const {	assert(0);		static typename T::VertexType *vp=0; return vp;	}
-	inline       typename T::CoordType & P( const int j ) 	    {	assert(0);		static typename T::CoordType coord(0, 0, 0); return coord;	}
-	inline const typename T::CoordType & P( const int j ) const {	assert(0);		static typename T::CoordType coord(0, 0, 0); return coord;	}
-	inline const typename T::CoordType &cP( const int j ) const	{	assert(0);		static typename T::CoordType coord(0, 0, 0); return coord;	}
-	template <class LeftF>
-	void ImportLocal(const LeftF & leftF) {T::ImportLocal(leftF);}
-  static bool HasVertexRef()   { return false; }
-	static void Name(std::vector<std::string> & name){T::Name(name);}
+	// typedef typename T::VertexType VertexType;
+	// typedef typename T::CoordType CoordType;
+	inline       typename T::VertexType *       &  V( const int j )       { (void)j; assert(0);  static typename T::VertexType *vp=0;         return vp;    }
+	inline       typename T::VertexType * const &  V( const int j ) const { (void)j; assert(0);  static typename T::VertexType *vp=0;         return vp;    }
+	inline       typename T::VertexType *         cV( const int j ) const { (void)j; assert(0);  static typename T::VertexType *vp=0;         return vp;    }
+	inline       typename T::CoordType &           P( const int j )       { (void)j; assert(0);  static typename T::CoordType coord(0, 0, 0); return coord; }
+	inline const typename T::CoordType &           P( const int j ) const { (void)j; assert(0);  static typename T::CoordType coord(0, 0, 0); return coord; }
+	inline const typename T::CoordType &          cP( const int j ) const { (void)j; assert(0);  static typename T::CoordType coord(0, 0, 0); return coord; }
 
+	template <class LeftF>
+	void ImportData(const LeftF & leftF) {T::ImportData(leftF);}
+
+	static bool HasEVAdjacency()   { return false; }
+	static bool HasVertexRef()     { return false; }
+	static void Name(std::vector<std::string> & name){T::Name(name);}
 };
 template <class T> class VertexRef: public T {
 public:
@@ -63,7 +65,7 @@ public:
 
   inline typename T::VertexType *       & V( const int j ) 	     { assert(j>=0 && j<2); return v[j]; }
   inline typename T::VertexType * const & V( const int j ) const { assert(j>=0 && j<2); return v[j]; }
-        inline typename T::VertexType *  cV( const int j ) const { assert(j>=0 && j<2);	return v[j]; }
+		inline typename T::VertexType *  cV( const int j ) const { assert(j>=0 && j<2);	return v[j]; }
 
 	// Shortcut per accedere ai punti delle facce
 	inline       typename T::CoordType & P( const int j ) 	    {	assert(j>=0 && j<2);		return v[j]->P();	}
@@ -78,7 +80,7 @@ public:
 	inline const typename T::VertexType * const &  V1( const int j ) const { return V((j+1)%2);}
 	inline const typename T::VertexType * const & cV0( const int j ) const { return cV(j);}
 	inline const typename T::VertexType * const & cV1( const int j ) const { return cV((j+1)%2);}
-	
+
 	/// Shortcut per accedere ai punti delle facce
 	inline       typename T::CoordType &  P0( const int j )       { return V(j)->P();}
 	inline       typename T::CoordType &  P1( const int j )       { return V((j+1)%2)->P();}
@@ -91,8 +93,9 @@ public:
 	inline const typename T::VertexType * const & UberV( const int j ) const	{ assert(j>=0 && j<2);	return v[j];	}
 
 	template <class LeftF>
-	void ImportLocal(const LeftF & leftF){ V(0) = NULL; V(1) = NULL; V(2) = NULL; T::ImportLocal(leftF);}
+	void ImportData(const LeftF & leftF){ T::ImportData(leftF);}
 
+  static bool HasEVAdjacency()   {   return true; }
   static bool HasVertexRef()   { return true; }
 	static void Name(std::vector<std::string> & name){name.push_back(std::string("VertexRef"));T::Name(name);}
 
@@ -101,9 +104,10 @@ public:
   typename T::VertexType *v[2];
 };
 
+template <class T> class EVAdj : public VertexRef<T>{};
 
 
-/*-------------------------- INCREMENTAL MARK  ----------------------------------------*/ 
+/*-------------------------- INCREMENTAL MARK  ----------------------------------------*/
 
 template <class T> class EmptyMark: public T {
 public:
@@ -113,7 +117,7 @@ public:
   inline int & IMark()       { assert(0); static int tmp=-1; return tmp;}
   inline const int & IMark() const {return 0;}
 	template < class LeftV>
-	void ImportLocal(const LeftV  & left ) { T::ImportLocal( left); }
+	void ImportData(const LeftV  & left ) { T::ImportData( left); }
 	static void Name(std::vector<std::string> & name){T::Name(name);}
 
 };
@@ -125,14 +129,14 @@ public:
   inline int & IMark()       { return _imark;}
   inline const int & IMark() const {return _imark;}
 	template < class LeftV>
-	void ImportLocal(const LeftV  & left ) { IMark() = left.IMark(); T::ImportLocal( left); }
+	void ImportData(const LeftV  & left ) { IMark() = left.IMark(); T::ImportData( left); }
 	static void Name(std::vector<std::string> & name){name.push_back(std::string("Mark"));T::Name(name);}
-    
+
  private:
 	int _imark;
 };
 
-/*------------------------- FLAGS -----------------------------------------*/ 
+/*------------------------- FLAGS -----------------------------------------*/
 template <class T> class EmptyBitFlags: public T {
 public:
 	typedef int FlagType;
@@ -140,7 +144,7 @@ public:
   int &Flags() { static int dummyflags(0);  assert(0); return dummyflags; }
   int Flags() const { return 0; }
 	template < class LeftV>
-	void ImportLocal(const LeftV  & left ) { T::ImportLocal( left); }
+	void ImportData(const LeftV  & left ) { T::ImportData( left); }
   static bool HasFlags()   { return false; }
 	static void Name(std::vector<std::string> & name){T::Name(name);}
 
@@ -153,15 +157,15 @@ public:
   int &Flags() {return _flags; }
   int Flags() const {return _flags; }
 	template < class LeftV>
-	void ImportLocal(const LeftV  & left ) { Flags() = left.Flags(); T::ImportLocal( left); }
+	void ImportData(const LeftV  & left ) { Flags() = left.Flags(); T::ImportData( left); }
   static bool HasFlags()   { return true; }
 	static void Name(std::vector<std::string> & name){name.push_back(std::string("BitFlags"));T::Name(name);}
 
 private:
-  int  _flags;    
+  int  _flags;
 };
 
-/*-------------------------- EMPTY COLOR & QUALITY ----------------------------------*/ 
+/*-------------------------- EMPTY COLOR & QUALITY ----------------------------------*/
 
 template <class T> class EmptyColorQuality: public T {
 public:
@@ -172,12 +176,12 @@ public:
   typedef vcg::Color4b ColorType;
   ColorType &C() { static ColorType dumcolor(vcg::Color4b::White); assert(0); return dumcolor; }
 	template < class LeftV>
-	void ImportLocal(const LeftV  & left ) { T::ImportLocal( left); }
+	void ImportData(const LeftV  & left ) { T::ImportData( left); }
   static bool HasColor()   { return false; }
 	static void Name(std::vector<std::string> & name){T::Name(name);}
 };
 
-/*-------------------------- Color  ----------------------------------*/ 
+/*-------------------------- Color  ----------------------------------*/
 
 template <class A, class T> class Color: public T {
 public:
@@ -187,19 +191,19 @@ public:
   const ColorType &C() const { return _color; }
   const ColorType &cC() const { return _color; }
 	template < class LeftV>
-	void ImportLocal(const LeftV  & left ) { C() = left.cC(); T::ImportLocal( left); }
+	void ImportData(const LeftV  & left ) { C() = left.cC(); T::ImportData( left); }
   static bool HasColor()   { return true; }
 	static void Name(std::vector<std::string> & name){name.push_back(std::string("Color"));T::Name(name);}
 
 private:
-  ColorType _color;    
+  ColorType _color;
 };
 
 template <class TT> class Color4b: public edge::Color<vcg::Color4b, TT> {
 	public: static void Name(std::vector<std::string> & name){name.push_back(std::string("Color4b"));TT::Name(name);}
 };
 
-/*-------------------------- Quality  ----------------------------------*/ 
+/*-------------------------- Quality  ----------------------------------*/
 
 template <class A, class TT> class Quality: public TT {
 public:
@@ -207,12 +211,12 @@ public:
   QualityType &Q() { return _quality; }
   const QualityType & cQ() const {return _quality; }
 	template < class LeftV>
-	void ImportLocal(const LeftV  & left ) { Q() = left.cQ(); TT::ImportLocal( left); }
+	void ImportData(const LeftV  & left ) { Q() = left.cQ(); TT::ImportData( left); }
   static bool HasQuality()   { return true; }
 	static void Name(std::vector<std::string> & name){name.push_back(std::string("Quality"));TT::Name(name);}
 
 private:
-  QualityType _quality;    
+  QualityType _quality;
 };
 
 template <class TT> class Qualitys: public Quality<short, TT> {
@@ -225,43 +229,49 @@ template <class TT> class Qualityd: public Quality<double, TT> {
 public: static void Name(std::vector<std::string> & name){name.push_back(std::string("Qualityd"));TT::Name(name);}
 };
 
-/*----------------------------- EVADJ ------------------------------*/ 
-template <class T> class EmptyEVAdj: public T {
-public:
-  typename T::VertexPointer &V(const int &) { static typename T::VertexPointer ep=0;  assert(0); return ep; }
-  typename T::VertexPointer cV(const int &) { static typename T::VertexPointer ep=0;  assert(0); return ep; }
-  int &EVi(){static int z=0; return z;};
+/*----------------------------- VEADJ ------------------------------*/
+  template <class T> class EmptyVEAdj: public T {
+  public:
+	typename T::EdgePointer &VEp(const int &  ) { static typename T::EdgePointer ep=0;  assert(0); return ep; }
+	const typename T::EdgePointer cVEp(const int & ) const { static typename T::EdgePointer ep=0;  assert(0); return ep; }
+	int &VEi(const int &){static int z=0; assert(0); return z;}
+	int cVEi(const int &) const {static int z=0; assert(0); return z;}
 	template < class LeftV>
-		void ImportLocal(const LeftV  & left ) { T::ImportLocal( left); }
-  static bool HasEVAdjacency()   {   return false; }
-  static bool HasEVAdjacencyOcc()   {   return false; }
+	  void ImportData(const LeftV  & left ) { T::ImportData( left); }
+	static bool HasVEAdjacency()   {   return false; }
+	static bool HasVEAdjacencyOcc()   {   return false; }
 	static void Name(std::vector<std::string> & name){ T::Name(name);}
-};
+  };
 
-template <class T> class EVAdj: public T {
-public:
-  EVAdj(){_vp[0]= _vp[1] =0;}
-  typename T::VertexPointer			&	V(const int & i) {return _vp[i]; }
-  const typename T::VertexPointer cV(const int & i) const {return _vp[i]; }
+  template <class T> class VEAdj: public T {
+  public:
+	VEAdj(){_ep[0]=0;_ep[1]=0;_zp[0]=-1;_zp[1]=-1;}
+	typename T::EdgePointer &VEp(const int & i) {return _ep[i]; }
+	typename T::EdgePointer cVEp(const int & i) const {return _ep[i]; }
+	int &EEi(const int & i){ return _zp[i];}
+	int cEEi(const int &i )const {return _zp[i];}
+
 	template < class LeftV>
-	void ImportLocal(const LeftV  & left ) { V() = NULL; T::ImportLocal( left); }
-  static bool HasEVAdjacency()   {   return true; }
-  static bool HasEVAdjacencyOcc()   {   return true; }
-	static void Name(std::vector<std::string> & name){name.push_back(std::string("EVAdj"));T::Name(name);}
-	
-private:
-   typename T::VertexPointer	 _vp[2] ;    
-};
+	void ImportData(const LeftV  & left ) {  T::ImportData( left); }
+	static bool HasVEAdjacency()   {   return true; }
+	static bool HasVEAdjacencyOcc()   {   return true; }
+	static void Name(std::vector<std::string> & name){name.push_back(std::string("VEAdj"));T::Name(name);}
+
+  private:
+	typename T::EdgePointer _ep[2] ;
+	int _zp[2] ;
+  };
 
 
-/*----------------------------- EEADJ ------------------------------*/ 
+/*----------------------------- EEADJ ------------------------------*/
 template <class T> class EmptyEEAdj: public T {
 public:
   typename T::EdgePointer &EEp(const int &  ) { static typename T::EdgePointer ep=0;  assert(0); return ep; }
-  typename T::EdgePointer cEEp(const int & ) { static typename T::EdgePointer ep=0;  assert(0); return ep; }
-  int &EEi(){static int z=0; return z;};
+	const typename T::EdgePointer cEEp(const int & ) const { static typename T::EdgePointer ep=0;  assert(0); return ep; }
+  int &EEi(const int &){static int z=0; assert(0); return z;}
+  int cEEi(const int &) const {static int z=0; assert(0); return z;}
 	template < class LeftV>
-		void ImportLocal(const LeftV  & left ) { T::ImportLocal( left); }
+		void ImportData(const LeftV  & left ) { T::ImportData( left); }
   static bool HasEEAdjacency()   {   return false; }
   static bool HasEEAdjacencyOcc()   {   return false; }
 	static void Name(std::vector<std::string> & name){ T::Name(name);}
@@ -269,30 +279,32 @@ public:
 
 template <class T> class EEAdj: public T {
 public:
-  EEAdj(){_ep=0;}
+  EEAdj(){_ep[0]=0;_ep[1]=0;_zp[0]=-1;_zp[1]=-1;}
   typename T::EdgePointer &EEp(const int & i) {return _ep[i]; }
-  typename T::EdgePointer cEEp(const int & i) {return _ep[i]; }
-  int &EEi(const int & i) {return _zp[i]; }
+  typename T::EdgePointer cEEp(const int & i) const {return _ep[i]; }
+  int &EEi(const int & i){ return _zp[i];}
+  int cEEi(const int &i )const {return _zp[i];}
+
 	template < class LeftV>
-	void ImportLocal(const LeftV  & left ) { EEp() = NULL; T::ImportLocal( left); }
+	void ImportData(const LeftV  & left ) {  T::ImportData( left); }
   static bool HasEEAdjacency()   {   return true; }
   static bool HasEEAdjacencyOcc()   {   return true; }
 	static void Name(std::vector<std::string> & name){name.push_back(std::string("EEAdj"));T::Name(name);}
 
 private:
-  typename T::EdgePointer _ep[2] ;    
-  int _zp[2] ;    
+  typename T::EdgePointer _ep[2] ;
+  int _zp[2] ;
 };
 
 
-/*----------------------------- EHADJ ------------------------------*/ 
+/*----------------------------- EHADJ ------------------------------*/
 template <class T> class EmptyEHAdj: public T {
 public:
   typename T::HEdgePointer &EHp(  ) { static typename T::HEdgePointer hp=0;  assert(0); return hp; }
-  typename T::HEdgePointer cEHp(  ) { static typename T::HEdgePointer hp=0;  assert(0); return hp; }
-  
+	const typename T::HEdgePointer cEHp(  ) const { static typename T::HEdgePointer hp=0;  assert(0); return hp; }
+
 	template < class LeftV>
-		void ImportLocal(const LeftV  & left ) { T::ImportLocal( left); }
+		void ImportData(const LeftV  & left ) { T::ImportData( left); }
   static bool HasEHAdjacency()   {   return false; }
   static bool HasEHAdjacencyOcc()   {   return false; }
 	static void Name(std::vector<std::string> & name){ T::Name(name);}
@@ -302,19 +314,19 @@ template <class T> class EHAdj: public T {
 public:
   EHAdj(){_hp=0;}
   typename T::HEdgePointer &EHp( ) {return _hp ; }
-  typename T::HEdgePointer cEHp( ) {return _hp ; }
- 
+	const typename T::HEdgePointer cEHp( ) const {return _hp ; }
+
 	template < class LeftV>
-	void ImportLocal(const LeftV  & left ) { EHp() = NULL; T::ImportLocal( left); }
+	void ImportData(const LeftV  & left ) { T::ImportData( left); }
   static bool HasEHAdjacency()   {   return true; }
   static bool HasEHAdjacencyOcc()   {   return true; }
 	static void Name(std::vector<std::string> & name){name.push_back(std::string("EHAdj"));T::Name(name);}
 
 private:
-  typename T::EdgePointer _hp ;        
+  typename T::HEdgePointer _hp ;
 };
 
-/*----------------------------- ETADJ ------------------------------*/ 
+/*----------------------------- ETADJ ------------------------------*/
 
 
 template <class T> class EmptyETAdj: public T {
@@ -338,21 +350,22 @@ public:
 	static void Name( std::vector< std::string > & name ) { name.push_back( std::string("ETAdj") ); T::Name(name); }
 
 private:
-	typename T::TetraPointer _tp ;    
-	int _zp ;    
+	typename T::TetraPointer _tp ;
+	int _zp ;
 };
 
 
 
-/*----------------------------- EFADJ ------------------------------*/ 
+/*----------------------------- EFADJ ------------------------------*/
 
 template <class T> class EmptyEFAdj: public T {
 public:
   typename T::FacePointer &EFp() { static typename T::FacePointer fp=0;  assert(0); return fp; }
-  typename T::FacePointer cEFp() { static typename T::FacePointer fp=0;  assert(0); return fp; }
-  int &EFi(){static int z=0; return z;};
+	const typename T::FacePointer cEFp() const  { static typename T::FacePointer fp=0;  assert(0); return fp; }
+	int &EFi()   {static int z=0; return z;};
+	const int &cEFi() const {static int z=0; return z;};
 	template < class LeftV>
-	void ImportLocal(const LeftV  & left ) { T::ImportLocal( left); }
+	void ImportData(const LeftV  & left ) { T::ImportData( left); }
   static bool HasEFAdjacency()   {   return false; }
   static bool HasEFAdjacencyOcc()   {   return false; }
 	static void Name(std::vector<std::string> & name){ T::Name(name);}
@@ -362,17 +375,18 @@ template <class T> class EFAdj: public T {
 public:
   EFAdj(){_fp=0;}
   typename T::FacePointer &EFp() {return _fp; }
-  typename T::FacePointer cEFp() {return _fp; }
-  int &EFi() {return _zp; }
+	const typename T::FacePointer cEFp() const {return _fp; }
+	int &EFi()   {static int z=0; return z;};
+	const int &cEFi() const  {return _zp; }
 	template < class LeftV>
-	void ImportLocal(const LeftV  & left ) { this->EFp() = NULL; T::ImportLocal( left); }
+	void ImportData(const LeftV  & left ) {  T::ImportData( left); }
   static bool HasEFAdjacency()   {   return true; }
   static bool HasEFAdjacencyOcc()   {   return true; }
 	static void Name(std::vector<std::string> & name){name.push_back(std::string("EFAdj"));T::Name(name);}
 
 private:
-  typename T::FacePointer _fp ;    
-  int _zp ;    
+  typename T::FacePointer _fp ;
+  int _zp ;
 };
 
 

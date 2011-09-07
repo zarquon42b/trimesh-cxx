@@ -438,8 +438,8 @@ static int Save(SaveMeshType &m,  const char * filename, bool binary, PlyInfo &p
 	for(j=0,vi=m.vert.begin();vi!=m.vert.end();++vi){
 		vp=&(*vi);
 		indices[vi] = j;
-
-    if(cb && ((j%1000)==0))(*cb)( (100*j)/(m.vn+m.fn), "Saving Vertices");
+	//((m.vn+m.fn) != 0) all vertices and faces have been marked as deleted but the are still in the vert/face vectors  
+    if(cb && ((j%1000)==0) && ((m.vn+m.fn) != 0) )(*cb)( (100*j)/(m.vn+m.fn), "Saving Vertices");
 
     if( !HasPerVertexFlags(m) || !vp->IsD() )
 		{
@@ -533,6 +533,7 @@ static int Save(SaveMeshType &m,  const char * filename, bool binary, PlyInfo &p
 			j++;
 		}
 	}
+	/*vcg::tri::*/
 	// this assert triggers when the vn != number of vertexes in vert that are not deleted.
   assert(j==m.vn); 
 
@@ -545,7 +546,9 @@ static int Save(SaveMeshType &m,  const char * filename, bool binary, PlyInfo &p
 	int fcnt=0;
 	for(j=0,fi=m.face.begin();fi!=m.face.end();++fi)
 		{
-		  if(cb && ((j%1000)==0) ) (*cb)( 100*(m.vn+j)/(m.vn+m.fn), "Saving Vertices");
+			//((m.vn+m.fn) != 0) all vertices and faces have been marked as deleted but the are still in the vert/face vectors  
+		  if(cb && ((j%1000)==0) && ((m.vn+m.fn) != 0)) 
+			  (*cb)( 100*(m.vn+j)/(m.vn+m.fn), "Saving Vertices");
 
 			fp=&(*fi);
 			if( ! fp->IsD() )
@@ -561,7 +564,7 @@ static int Save(SaveMeshType &m,  const char * filename, bool binary, PlyInfo &p
           if(HasPerFaceFlags(m)&&( pi.mask & Mask::IOM_FACEFLAGS) )
 						fwrite(&(fp->Flags()),sizeof(int),1,fpout);
 
-          if( HasPerVertexTexCoord(m) && (pi.mask & Mask::IOM_WEDGTEXCOORD) ) // you can save VT as WT if you really want it...
+          if( HasPerVertexTexCoord(m) && (pi.mask & Mask::IOM_VERTCOORD) )
 					{
 						fwrite(&b6,sizeof(char),1,fpout);
 						float t[6];
@@ -760,6 +763,7 @@ static const char *ErrorMsg(int error)
 	  capability |= vcg::tri::io::Mask::IOM_WEDGTEXMULTI ;
     capability |= vcg::tri::io::Mask::IOM_WEDGNORMAL   ;
 		capability |= vcg::tri::io::Mask::IOM_CAMERA   ;
+		capability |= vcg::tri::io::Mask::IOM_BITPOLYGONAL;
 	  return capability;
   }
 

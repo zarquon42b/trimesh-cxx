@@ -27,7 +27,8 @@
 //#include <vcg/space/point3.h>
 //#include <vcg/space/texcoord2.h>
 //#include <vcg/space/color4.h>
-#include <vcg/complex/used_types.h>
+#include <vcg/complex/all_types.h>
+//#include <vcg/complex/used_types.h>
 #include <vcg/connectors/hedge_component.h>
 #include <vcg/container/derivation_chain.h>
 
@@ -44,7 +45,7 @@ template <class UserTypes>
   public:
 
 	template < class LeftV>
-	void ImportLocal(const LeftV  & /* left */ ) { } 
+	void ImportData(const LeftV  & /* left */ ) { }
 	static void Name(std::vector<std::string> & name){}
 
 };

@@ -64,7 +64,7 @@ namespace vcg{
 	
 	class MatrixDiagBase{public: 
 	virtual const int & Dimension()const =0;
-	virtual const float operator[](const int & i)const = 0;
+        virtual float operator[](const int & i)const = 0;
 	};
 	template<int N, class S> 
 	class MatrixDiag: public Point<N,S>, public MatrixDiagBase{
@@ -278,7 +278,7 @@ namespace vcg{
 					s+=(_rows-1);
 				}
 				Matrix<TYPE> temp(_rows-1, _columns-1, values);
-				return (pow(-1, i+j)*temp.Determinant());
+        return (pow(TYPE(-1.0), TYPE(i+j))*temp.Determinant());
 			};
 
 			/*!
@@ -299,7 +299,7 @@ namespace vcg{
 			*/
 			inline const TYPE* operator[](const unsigned int i) const 
 			{
-				assert(i>=0 && i<_rows);
+        assert(i<_rows);
 				return _data + i*_columns;
 			};
 

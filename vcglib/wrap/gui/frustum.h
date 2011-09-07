@@ -70,9 +70,10 @@ public:
   Point3<T> ViewPoint();
   T Resolution(float dist = 1);
   bool IsOutside(Point3<T> &point);
-  float Remoteness(Point3<T> &point, T radius);
-  bool IsOutside(Point3<T> &point, T radius);
+  T Remoteness(Point3<T> &point, T radius);
+  T IsOutside(Point3<T> &point, T radius);
   T Distance(Point3<T> &point, int plane);  
+  T range(Point3<T> &point, T radius, T &closest, T &farthest);
   
 protected:
   T resolution;  
@@ -103,7 +104,7 @@ template <class T> bool Frustum<T>::IsOutside(Point3<T> &point) {
   return false;
 }
 
-template <class T> float Frustum<T>::Remoteness(Point3<T> &point, T radius) {
+template <class T> T Frustum<T>::Remoteness(Point3<T> &point, T radius) {
   Point3<T> r = Project(point);
   T dist = (point - view_point).Norm();
   if(dist < radius) return 0;
@@ -124,13 +125,20 @@ template <class T> float Frustum<T>::Remoteness(Point3<T> &point, T radius) {
   return 1 + (mindist / (View<T>::viewport[0] + View<T>::viewport[2]));
 }
 
-template <class T> bool Frustum<T>::IsOutside(Point3<T> &point, T radius) {
+template <class T> T Frustum<T>::IsOutside(Point3<T> &point, T radius) {
+  T dist = 0;
   for(int i = 0; i < 4; i++) {
-    T dist = Distance(point, i);   
-    if(dist < -radius) 
-      return true;  
+    T d = -Distance(point, i) - radius;
+    if(d > dist) dist = d;
   }
-  return false;
+  return dist;
+}
+
+template <class T> T Frustum<T>::range(Point3<T> &point, T radius, T &closest, T &farthest) {
+  //4 near 5 far
+  T dist = (view_point - point).Norm();
+  closest = dist - radius;
+  farthest = dist + radius;
 }
 
 template <class T> T Frustum<T>::Distance(Point3<T> &point, int plane) {    
@@ -173,8 +181,8 @@ template <class T> void Frustum<T>::UpdateView() {
   planes[5].Init(SW, SE, NE);   
 
   //compute resolution: sizeo of a pixel unitary distance from view_point
-  resolution = ((ne + NE) - (nw + NW)).Norm() /
-               (View<T>::viewport[2] * ((ne + NE) - view_point).Norm());
+  resolution = ((ne + NE)/2 - (nw + NW)/2).Norm() /
+               (View<T>::viewport[2] * ((ne + NE + nw + NW)/4 - view_point).Norm());
 }
 
 }//namespace

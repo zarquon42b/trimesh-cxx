@@ -27,7 +27,8 @@
 //#include <vcg/space/point3.h>
 //#include <vcg/space/texcoord2.h>
 //#include <vcg/space/color4.h>
-#include <vcg/complex/used_types.h>
+#include <vcg/complex/all_types.h>
+//#include <vcg/complex/used_types.h>
 #include <vcg/simplex/edge/component.h>
 #include <vcg/container/derivation_chain.h>
 
@@ -44,7 +45,7 @@ template <class UserTypes>
   public:
 
 	template < class LeftV>
-	void ImportLocal(const LeftV  & /* left */ ) { } 
+	void ImportData(const LeftV  & /* left */ ) { }
 	static void Name(std::vector<std::string> & name){}
 
 };
@@ -63,11 +64,12 @@ we have to build the type a step a time (deriving from a single ancestor at a ti
 */ 
 template <class UserTypes>
 				class EdgeBase: public		  edge::EmptyEFAdj<
-																		edge::EmptyEVAdj<
+                                    edge::EmptyVEAdj<
 																		edge::EmptyEEAdj<
 																		edge::EmptyEHAdj<
 																		edge::EmptyBitFlags<
-																		EdgeTypeHolder < UserTypes> >  > > > >{};
+																		edge::EmptyVertexRef<
+																		EdgeTypeHolder < UserTypes> >  > > > > >{};
 
 
 /* The Real Big Edge class;

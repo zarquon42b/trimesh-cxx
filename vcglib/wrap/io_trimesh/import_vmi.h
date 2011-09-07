@@ -390,7 +390,7 @@ namespace io {
 				 
 												 
                  static int  LoadFaceOcfMask( FILE * f){
-					 int mask;
+                int mask=0;
                     std::string s;
 
                 // face quality
@@ -615,8 +615,9 @@ namespace io {
 
         static bool GetHeader(const char * filename,std::vector<std::string>& nameV, std::vector<std::string>& nameF, unsigned int & vertSize, unsigned int &faceSize,vcg::Box3f & bbox,int & mask){
 				F() = fopen(filename,"rb");
-				return GetHeader(nameV, nameF, vertSize, faceSize,bbox,mask);
+				bool res =  GetHeader(nameV, nameF, vertSize, faceSize,bbox,mask);
 				fclose(F());
+				return res;
 	}
 
 	public:
@@ -652,15 +653,15 @@ namespace io {
             if(fnameV != nameV) return VMI_INCOMPATIBLE_VERTEX_TYPE;
             if(fnameF != nameF) return VMI_INCOMPATIBLE_FACE_TYPE;
 
-			 int offsetV=0,offsetF=0;
+			 void *  offsetV = 0,*offsetF = 0;
 
 			 if(vertSize!=0)
 				/* read the address of the first vertex */
-				fread(&offsetV,sizeof( int),1,F());
+				fread(&offsetV,sizeof( void *),1,F());
 
 			 if(faceSize!=0)
 				/* read the address of the first face */
-				fread(&offsetF,sizeof( int),1,F());
+				fread(&offsetF,sizeof( void *),1,F());
 
 			/* read the object mesh */
 			fread(&m.shot,sizeof(Shot<typename OpenMeshType::ScalarType>),1,F());
@@ -733,7 +734,8 @@ namespace io {
 				AttrAll<OpenMeshType,A0,A1,A2,A3,A4>::template AddAttrib<2>(m,_string.c_str(),sz,data);
 				Free(data);
 			}
-	
+
+			if(!m.face.empty()){
 			if(FaceType::HasVFAdjacency())
 				for(vi = m.vert.begin(); vi != m.vert.end(); ++vi){
 					(*vi).VFp() = (*vi).VFp()-(FaceType*)offsetF+ &m.face[0];
@@ -761,9 +763,9 @@ namespace io {
 					(*fi).VFp(1) = (*fi).VFp(1)-(FaceType*)offsetF+ &m.face[0];
 					(*fi).VFp(2) = (*fi).VFp(2)-(FaceType*)offsetF+ &m.face[0];
 				}
-
-				fclose(F());
-                return VMI_NO_ERROR; // zero is the standard (!) code of success
+			}
+			fclose(F());
+            return VMI_NO_ERROR; // zero is the standard (!) code of success
 		} 
 
 	}; // end class
