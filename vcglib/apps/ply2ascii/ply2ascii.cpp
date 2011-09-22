@@ -49,24 +49,30 @@ typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
 	char filename[256];
+        bool noclean = false;
   if (argc< 3){
 		printf("\n");
     printf("    Convert a mesh to ascii ply format\n");
-    printf("    Usage: ply2ascii <input.mesh> <output.ply>\n");
+    printf("    Usage: ply2ascii <input.mesh> <output.ply> [option]\n");
     printf("       <mesh>        any common mesh file (any common mesh file).\n");
     printf("       <output.ply>      cleaned mesh with updated vertex normals saved in ascii PLY format.\n");
     
    
 		return 0;
 	}
-  /*else if (argc == 2)
-	{
-	strcpy(filename, argv[1]);
-	}	
-	else if (argc == 3)
-	{*/
-	strcpy(filename, argv[2]);
-	//}
+  for (int i = 1; i < argc; i++) {
+
+
+                  if (strcmp("--noclean", argv[i]) == 0)
+                  {
+                    noclean = true;
+                  }
+  }
+
+
+
+    strcpy(filename, argv[2]);
+
 	
 	MyMesh mesh;
   
@@ -91,11 +97,13 @@ int main(int argc,char ** argv){
   // Update the bounding box and initialize max search distance
   // Remove duplicates and update mesh properties
   //--------------------------------------------------------------------------------------//
-
+if (noclean == false)
+{
   int dup = tri::Clean<MyMesh>::RemoveDuplicateVertex(mesh);
         int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
   if (dup > 0 || unref > 0)
                 printf("Removed %i duplicate and %i unreferenced vertices from mesh %s\n",dup,unref,argv[2]);
+}
   tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);

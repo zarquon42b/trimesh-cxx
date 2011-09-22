@@ -78,37 +78,35 @@ int main(int argc,char ** argv){
 
   for (int i = 1; i < argc; i++) {
 
-      if (i + 1 != argc) {// Check that we haven't finished parsing already
-
+      if (i + 1 != argc) {// Check that we haven't finished parsing already for option wtih value
+	if (strcmp("-t", argv[i]) == 0)
+	  {
+	    thresh = atof(argv[i + 1]);
+	  }
+	if (strcmp("-o", argv[i]) == 0)
+	  {
+	    strcpy(filename, argv[i+1]);
+	    if (i==argc-2)
+	      {noout=false;}
+	  }
+      }
                 if (strcmp("-cloud", argv[i]) == 0)
                 {
                 cloud = true;
 
             }
-                if (strcmp("-t", argv[i]) == 0)
-                {
-                thresh = atof(argv[i + 1]);
-
-
-            }
-                if (strcmp("-o", argv[i]) == 0)
-                {
-                strcpy(filename, argv[i+1]);
-                if (i==argc-2)
-                {noout=false;}
-            }
+                
                 if (strcmp("--inbound", argv[i]) == 0)
                 {
                 inbound = true;
-                {noout=false;}
+                
             }
                 if (strcmp("--strict", argv[i]) == 0)
                 {
                 strict = true;
-                {noout=false;}
             }
        }
-  }
+  
 
     if (noout == true)
           {
