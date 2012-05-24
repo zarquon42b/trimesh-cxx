@@ -53,6 +53,7 @@ int main(int argc,char ** argv){
     bool noout = true;
     bool inbound = false;
     bool strict = false;
+    bool minray = false;
     char filename[256];
 
   if (argc < 3){
@@ -65,6 +66,7 @@ int main(int argc,char ** argv){
     printf("       -cloud - vertex normals have to be computed individually.\n");
     printf("       --inbound - search will be along oposite of normal first.\n");
     printf("       --strict - this options will write the value 1e12 into Vertex quality.\n");
+    printf("       --minray - find the closest point looking in both directions");
     printf("                  if no face is hit by the ray.\n");
     printf("       -o <output.ply> - define output filename (and path) default is project.mesh.ply.\n");
 
@@ -100,6 +102,11 @@ int main(int argc,char ** argv){
                 {
                 inbound = true;
                 
+            }
+                if (strcmp("--minray", argv[i]) == 0)
+                {
+                minray = true;
+
             }
                 if (strcmp("--strict", argv[i]) == 0)
                 {
@@ -175,6 +182,7 @@ int main(int argc,char ** argv){
   float maxDist = mesh.bbox.Diag();
   float minDist = 1e-10;
   float t;
+  float tNew;
 
   //--------------------------------------------------------------------------------------//
   //
@@ -216,20 +224,39 @@ int main(int argc,char ** argv){
         MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
 
         if (f_ptr && t < thresh)
-            {MyMesh::CoordType tt = in_cloud.vert[i].P()+dir*t;
-            int f_i = vcg::tri::Index(mesh, f_ptr);
-            MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-            double t0;
-            t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
-            out_cloud.vert[i].N() = ti/t0;
-            out_cloud.vert[i].Q() = t;
-            out_cloud.vert[i].P() = tt;
+            {
+                double tOut = t;
 
+                if (minray == true)
+                {
+                    Point3f dir1 = -dir;
+                    ray.SetDirection(dir1);
+                    MyFace* f_ptr1=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, tNew);
+                // check if reverse ray finds a closer match
+                    if (f_ptr1 && tNew < t)
+                    {
+                    dir = dir1;
+                    t = tNew;
+                    tOut = -t;
+                    f_ptr = f_ptr1;
+               }
+
+            }
+
+                   MyMesh::CoordType tt = in_cloud.vert[i].P()+dir*t;
+                   int f_i = vcg::tri::Index(mesh, f_ptr);
+                   MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
+                   double t0;
+                   t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
+                   out_cloud.vert[i].N() = ti/t0;
+                   out_cloud.vert[i].Q() = tOut;
+                   out_cloud.vert[i].P() = tt;
         }
         else
         {
-            MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
             ray.SetDirection(-dir);
+            MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
+
             if (f_ptr && t < thresh)
 
                 {MyMesh::CoordType tt = in_cloud.vert[i].P()+dir*t;
@@ -238,7 +265,7 @@ int main(int argc,char ** argv){
                 double t0;
                 t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
                 out_cloud.vert[i].N() = ti/t0;
-                out_cloud.vert[i].Q() = t;
+                out_cloud.vert[i].Q() = -t;
                 out_cloud.vert[i].P() = tt;
 
             }
