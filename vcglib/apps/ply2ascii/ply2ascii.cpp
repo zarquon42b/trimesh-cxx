@@ -49,13 +49,17 @@ typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
 	char filename[256];
-        bool noclean = false;
+        bool noclean = false, col =false;
   if (argc< 3){
 		printf("\n");
     printf("    Convert a mesh to ascii ply format\n");
     printf("    Usage: ply2ascii <input.mesh> <output.ply> [option]\n");
     printf("       <mesh>        any common mesh file (any common mesh file).\n");
     printf("       <output.ply>      cleaned mesh with updated vertex normals saved in ascii PLY format.\n");
+    printf("       --noclean      skip cleaning duplicate and unreferenced vertices.\n");
+    printf("       --color        export vertex colors - if none are present, vertices will be colored white.\n");
+
+
     
    
 		return 0;
@@ -66,6 +70,11 @@ int main(int argc,char ** argv){
                   if (strcmp("--noclean", argv[i]) == 0)
                   {
                     noclean = true;
+                  }
+ if (strcmp("--color", argv[i]) == 0)
+                  {
+                    col = true;
+		    noclean = true;
                   }
   }
 
@@ -114,10 +123,14 @@ if (noclean == false)
  
 
   
-
-  tri::io::ExporterPLY<MyMesh>::Save(mesh,filename,tri::io::Mask::IOM_VERTNORMAL, false); // in ASCII
-
-
+  if (col == true)
+    {
+      tri::io::ExporterPLY<MyMesh>::Save(mesh,filename,tri::io::Mask::IOM_VERTNORMAL+tri::io::Mask::IOM_VERTCOLOR, false); // in ASCII
+    }
+  else
+{
+      tri::io::ExporterPLY<MyMesh>::Save(mesh,filename,tri::io::Mask::IOM_VERTNORMAL, false); // in ASCII
+    }
 
   return 0;
 }
