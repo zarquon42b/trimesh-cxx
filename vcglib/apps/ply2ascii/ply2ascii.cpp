@@ -120,17 +120,15 @@ if (noclean == false)
 
 
   //--------------------------------------------------------------------------------------//
- 
-
-  
+  int mask0 = tri::io::Mask::IOM_VERTNORMAL;
   if (col == true)
     {
-      tri::io::ExporterPLY<MyMesh>::Save(mesh,filename,tri::io::Mask::IOM_VERTNORMAL+tri::io::Mask::IOM_VERTCOLOR, false); // in ASCII
+      mask0  = mask0+tri::io::Mask::IOM_VERTCOLOR;
     }
-  else
-{
-      tri::io::ExporterPLY<MyMesh>::Save(mesh,filename,tri::io::Mask::IOM_VERTNORMAL, false); // in ASCII
-    }
+  
+  tri::io::ExporterPLY<MyMesh>::Save(mesh,filename,mask0, false); // in ASCII
+  
+ 
 
   return 0;
 }
