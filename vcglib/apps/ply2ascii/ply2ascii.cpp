@@ -74,8 +74,7 @@ int main(int argc,char ** argv){
  if (strcmp("--color", argv[i]) == 0)
                   {
                     col = true;
-		    noclean = true;
-                  }
+		  }
   }
 
 
@@ -106,13 +105,22 @@ int main(int argc,char ** argv){
   // Update the bounding box and initialize max search distance
   // Remove duplicates and update mesh properties
   //--------------------------------------------------------------------------------------//
-if (noclean == false)
+if (col == false && noclean == false)
 {
   int dup = tri::Clean<MyMesh>::RemoveDuplicateVertex(mesh);
-        int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
+  int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
   if (dup > 0 || unref > 0)
+    {
                 printf("Removed %i duplicate and %i unreferenced vertices from mesh %s\n",dup,unref,argv[2]);
+    }
 }
+ if (col == true && noclean ==false)
+   {
+     int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
+     if (dup > 0 || unref > 0)
+       printf("Removed %i unreferenced vertices from mesh %s\n",unref,argv[2]);
+   }
+ 
   tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
