@@ -48,7 +48,7 @@ typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 //typedef vcg::SpatialHashTable<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
-         bool nosmooth = false;
+  bool nosmooth = false, sign = true;
          char filename[256] = "out_cloud.ply";
     if (argc<3){
 
@@ -60,6 +60,7 @@ int main(int argc,char ** argv){
 
         printf("       <mesh>         Mesh model over which to project (PLY|STL|OBJ format).\n");
         printf("       --nosmooth     don't smooth vertex normals.\n");
+	printf("       --sign         return signed distances.\n");
         printf("       -o             specify output file (PLY format).\n");
         printf("\n");
         printf("Saves the projected point cloud in the file out_cloud.ply when terminated.\n");
@@ -82,6 +83,9 @@ int main(int argc,char ** argv){
 
                         if (strcmp("--nosmooth", argv[i]) == 0)
                         {nosmooth=true;
+                        }
+ if (strcmp("--sign", argv[i]) == 0)
+                        {sign=true;
                         }
             }
 }
@@ -123,10 +127,17 @@ int main(int argc,char ** argv){
   tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
+  if (sign == true)
+    {
+      tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
+      tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(in_cloud);
+      tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
+   
+    }
   if (nosmooth == false)
   {
   tri::Smooth<MyMesh>::VertexNormalLaplacian(mesh,2,false);
-}
+  }
   tri::UpdateNormals<MyMesh>::NormalizeVertex(mesh);
   tri::UpdateQuality<MyMesh>::VertexConstant(out_cloud, 0);  
   float maxDist = mesh.bbox.Diag();
@@ -164,7 +175,18 @@ int main(int argc,char ** argv){
     MyMesh::CoordType tt = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
     double t0;
     t0 = sqrt(tt[0]*tt[0]+tt[1]*tt[1]+tt[2]*tt[2]);
-    out_cloud.vert[i].N() = tt/t0;
+    tt = tt/t0;
+    
+    if (sign == true)
+      {
+	Point3f dif = currp - clost;
+	float signo = dif.dot(tt);	
+	if (signo < 0)
+	  { out_cloud.vert[i].Q() = -out_cloud.vert[i].Q() ;
+	  }
+	
+      }
+    out_cloud.vert[i].N() = tt;
   }
 
   int t2 = clock();
