@@ -48,7 +48,7 @@ typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 //typedef vcg::SpatialHashTable<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
-  bool nosmooth = false, sign = true;
+  bool nosmooth = false, sign = false;
          char filename[256] = "out_cloud.ply";
     if (argc<3){
 
@@ -179,7 +179,7 @@ int main(int argc,char ** argv){
     
     if (sign == true)
       {
-	Point3f dif = currp - clost;
+	Point3f dif = clost - currp;
 	float signo = dif.dot(tt);	
 	if (signo < 0)
 	  { out_cloud.vert[i].Q() = -out_cloud.vert[i].Q() ;
