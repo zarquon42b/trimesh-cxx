@@ -91,8 +91,8 @@ int main(int argc,char ** argv){
 }
 
     MyMesh mesh;
-  MyMesh in_cloud;
-  MyMesh out_cloud;
+    MyMesh in_cloud;
+    MyMesh out_cloud;
 	
   //--------------------------------------------------------------------------------------//
   //
@@ -127,13 +127,13 @@ int main(int argc,char ** argv){
   tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
-  if (sign == true)
-    {
-      tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
-      tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(in_cloud);
-      tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
-   
-    }
+  //if (sign == true)
+  //  {
+  //   tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
+  //    tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(in_cloud);
+  //    tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
+  // 
+  // }
   if (nosmooth == false)
   {
   tri::Smooth<MyMesh>::VertexNormalLaplacian(mesh,2,false);
@@ -155,9 +155,9 @@ int main(int argc,char ** argv){
   mf.SetMesh( &mesh );
   vcg::face::PointDistanceBaseFunctor<float> PDistFunct;
   tri::UpdateFlags<MyMesh>::FaceProjection(mesh);
-	TriMeshGrid static_grid;
+  TriMeshGrid static_grid;
   printf("preprocessing mesh with %d faces\n", mesh.fn);
-	static_grid.Set(mesh.face.begin(), mesh.face.end());
+  static_grid.Set(mesh.face.begin(), mesh.face.end());
 
   
   //--------------------------------------------------------------------------------------//
@@ -173,9 +173,8 @@ int main(int argc,char ** argv){
     int f_i = vcg::tri::Index(mesh, f_ptr);
     out_cloud.vert[i].Q() = minDist;
     MyMesh::CoordType tt = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-    double t0;
-    t0 = sqrt(tt[0]*tt[0]+tt[1]*tt[1]+tt[2]*tt[2]);
-    tt = tt/t0;
+    tt=tt/sqrt(tt.dot(tt));
+    
     
     if (sign == true)
       {

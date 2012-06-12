@@ -202,14 +202,14 @@ int main(int argc,char ** argv){
   // Create a static grid (for fast indexing) and fill it 
   //--------------------------------------------------------------------------------------//
   vcg::tri::FaceTmark<MyMesh> mf;
-    mf.SetMesh( &mesh );
-    vcg::RayTriangleIntersectionFunctor<true> FintFunct;
-    vcg::face::PointDistanceBaseFunctor<float> PDistFunct;
-    tri::UpdateFlags<MyMesh>::FaceProjection(mesh);
-          TriMeshGrid static_grid;
-    printf("preprocessing mesh with %d faces\n", mesh.fn);
-          static_grid.Set(mesh.face.begin(), mesh.face.end());
-    tri::UpdateFlags<MyMesh>::FaceProjection(mesh);
+  mf.SetMesh( &mesh );
+  vcg::RayTriangleIntersectionFunctor<true> FintFunct;
+  vcg::face::PointDistanceBaseFunctor<float> PDistFunct;
+  tri::UpdateFlags<MyMesh>::FaceProjection(mesh);
+  TriMeshGrid static_grid;
+  printf("preprocessing mesh with %d faces\n", mesh.fn);
+  static_grid.Set(mesh.face.begin(), mesh.face.end());
+  tri::UpdateFlags<MyMesh>::FaceProjection(mesh);
   
   //--------------------------------------------------------------------------------------//
   //
@@ -217,7 +217,7 @@ int main(int argc,char ** argv){
   //
   //--------------------------------------------------------------------------------------//
   int t1=clock();
-   //int count = 1;
+  //int count = 1;
   for(int i=0; i<in_cloud.vn; i++){
     
     angfail = false;
@@ -225,11 +225,11 @@ int main(int argc,char ** argv){
     Point3f orig = in_cloud.vert[i].P();
     Point3f dir = in_cloud.vert[i].N();
     Point3f dirOrig = dir;
-
+    
     if (inbound == true)
-        {
-	  dir = -dir;
-	}
+      {
+	dir = -dir;
+      }
     
     ray.SetOrigin(orig);
     ray.SetDirection(dir);
@@ -246,15 +246,11 @@ int main(int argc,char ** argv){
 	    int f_ang = vcg::tri::Index(mesh, f_ptr);
 	    MyMesh::CoordType nout = (mesh.face[f_ang].V(0)->N()+mesh.face[f_ang].V(1)->N()+mesh.face[f_ang].V(2)->N())/3;
 	    double lnout;
-	    lnout = sqrt(nout[0]*nout[0]+nout[1]*nout[1]+nout[2]*nout[2]);
+	    lnout = sqrt(nout.dot(nout));
 	    nout = nout/lnout;	    
 	    Point3f tmp = nout-dirOrig;
-	    //tmp[0] = noutRev[0]-dirOrig[0];
-	    //tmp[1] = noutRev[1]-dirOrig[1];		    
-	    //tmp[2] = noutRev[2]-dirOrig[2];
-	    angle = acos(((tmp[0]*tmp[0]+tmp[1]*tmp[1]+tmp[2]*tmp[2])-2)/-2);
+	    angle = acos(((tmp.dot(tmp))-2)/-2);
 	    tOut = t;
-	    
 	  }	
 	
 	if (minray == true || angmax < angle )
@@ -281,14 +277,11 @@ int main(int argc,char ** argv){
 		    int f_ang = vcg::tri::Index(mesh, f_ptr1);
 		    MyMesh::CoordType noutRev = (mesh.face[f_ang].V(0)->N()+mesh.face[f_ang].V(1)->N()+mesh.face[f_ang].V(2)->N())/3;
 		    double lnout;
-		    lnout = sqrt(noutRev[0]*noutRev[0]+noutRev[1]*noutRev[1]+noutRev[2]*noutRev[2]);
+		    lnout = sqrt(noutRev.dot(noutRev));
 		    noutRev = noutRev/lnout;
 		    Point3f tmp = noutRev-dirOrig;
-		    //tmp[0] = noutRev[0]-dirOrig[0];
-		    //tmp[1] = noutRev[1]-dirOrig[1];		    
-		    //tmp[2] = noutRev[2]-dirOrig[2];
+		    float angle1 = acos(((tmp.dot(tmp))-2)/-2);
 		    
-		    float angle1 = acos(((tmp[0]*tmp[0]+tmp[1]*tmp[1]+tmp[2]*tmp[2])-2)/-2);
 		    if ( angle1 < angmax )
 		      {
 			tOut=30;
@@ -296,7 +289,6 @@ int main(int argc,char ** argv){
 			t = tNew;
 			tOut = -t;
 			f_ptr = f_ptr1;
-			
 		      }
 		    else //could not find matching normal  - take closest point 
 		      {   
@@ -312,9 +304,8 @@ int main(int argc,char ** argv){
 			
 			int f_i = vcg::tri::Index(mesh, f_ptr);
 			MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-			double t0;
-			t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
-			out_cloud.vert[i].N() = ti/t0;
+			ti = ti/sqrt(ti.dot(ti));
+			out_cloud.vert[i].N() = ti;
 			out_cloud.vert[i].P() = clost;
 			angfail = true;
 		      }
@@ -326,44 +317,43 @@ int main(int argc,char ** argv){
 	    MyMesh::CoordType tt = in_cloud.vert[i].P()+dir*t;
 	    int f_i = vcg::tri::Index(mesh, f_ptr);
 	    MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-	    double t0;
-	    t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
-	    out_cloud.vert[i].N() = ti/t0;
+	    
+	    ti = ti/sqrt(ti.dot(ti));
+	    out_cloud.vert[i].N() = ti;
 	    out_cloud.vert[i].Q() = tOut;
 	    out_cloud.vert[i].P() = tt;
 	  }
-	  }
+      }
     else // look the other way as outward nothing was hit
-	  {
-            ray.SetDirection(-dir);
-            MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
-	    
-            if (f_ptr && t < thresh)
+      {
+	ray.SetDirection(-dir);
+	MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
+	
+	if (f_ptr && t < thresh)
 	      {
 		if (angcheck == true) // check if there is a good normal match the other direction
 		  {
 		    int f_ang = vcg::tri::Index(mesh, f_ptr);
 		    MyMesh::CoordType nout = (mesh.face[f_ang].V(0)->N()+mesh.face[f_ang].V(1)->N()+mesh.face[f_ang].V(2)->N())/3;
 		    double lnout;
-		    lnout = sqrt(nout[0]*nout[0]+nout[1]*nout[1]+nout[2]*nout[2]);
+		    lnout = sqrt(nout.dot(nout));
 		    nout = nout/lnout;
 		    Point3f tmp = nout-dirOrig;
-		    angle = acos(((tmp[0]*tmp[0]+tmp[1]*tmp[1]+tmp[2]*tmp[2])-2)/-2);
+		    angle = acos(((tmp.dot(tmp))-2)/-2);
 		    if (angle > angmax)
 		      {
 			angfail = true;
 		      }
 		  }
 		
-		  
+		
 		if (angfail == false) //we have found a fitting point and use the normals + origin to hit it
 		  {
 		    MyMesh::CoordType tt = in_cloud.vert[i].P()-dir*t;
 		    int f_i = vcg::tri::Index(mesh, f_ptr);
 		    MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-		    double t0;
-		    t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
-		    out_cloud.vert[i].N() = ti/t0;
+		    ti = ti/sqrt(ti.dot(ti));
+		    out_cloud.vert[i].N() = ti;
 		    out_cloud.vert[i].Q() = -t;
 		    out_cloud.vert[i].P() = tt;		
 		  }
@@ -380,9 +370,8 @@ int main(int argc,char ** argv){
 		      }		
 		    int f_i = vcg::tri::Index(mesh, f_ptr);
 		    MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-		    double t0;
-		    t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
-		    out_cloud.vert[i].N() = ti/t0;
+		    ti = ti/sqrt(ti.dot(ti));
+		    out_cloud.vert[i].N() = ti;
 		    out_cloud.vert[i].P() = clost;
 		  }
 	      }
@@ -400,9 +389,8 @@ int main(int argc,char ** argv){
 		
                 int f_i = vcg::tri::Index(mesh, f_ptr);
                 MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-                double t0;
-                t0 = sqrt(ti[0]*ti[0]+ti[1]*ti[1]+ti[2]*ti[2]);
-                out_cloud.vert[i].N() = ti/t0;
+                ti = ti/sqrt(ti.dot(ti));
+		out_cloud.vert[i].N() = ti;
                 out_cloud.vert[i].P() = clost;
 	      }
           }
