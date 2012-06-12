@@ -22,6 +22,7 @@ using namespace std;
 #include <vcg/space/index/spatial_hashing.h>
 #include <vcg/complex/algorithms/closest.h>
 #include <vcg/complex/algorithms/smooth.h>
+#include <vcg/complex/append.h>
 
 // VCG File Format Importer/Exporter
 #include <wrap/io_trimesh/import.h>
@@ -110,7 +111,8 @@ int main(int argc,char ** argv){
 		exit(-1);  
 	}
   // Allocate space for projected cloud
-  tri::Allocator<MyMesh>::AddVertices(out_cloud,in_cloud.vn);
+  //tri::Allocator<MyMesh>::AddVertices(out_cloud,in_cloud.vn)
+  vcg::tri::Append<MyMesh,MyMesh>::Mesh(out_cloud,in_cloud);
 
   //--------------------------------------------------------------------------------------//
   //
