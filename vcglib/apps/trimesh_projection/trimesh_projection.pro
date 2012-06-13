@@ -1,4 +1,4 @@
-TARGET = trimesh_project
+TARGET = ../../../bin/trimesh_project
 DEPENDPATH += . 
 INCLUDEPATH += . ../..
 CONFIG += console stl

@@ -1,4 +1,4 @@
-TARGET = trismooth
+TARGET = ../../../bin/trismooth
 DEPENDPATH += . 
 INCLUDEPATH += . ../..
 CONFIG += console stl 

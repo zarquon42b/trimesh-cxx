@@ -1,4 +1,4 @@
-TARGET = rayproject
+TARGET = ../../../bin/rayproject
 DEPENDPATH += . 
 INCLUDEPATH += . ../..
 CONFIG += console stl 

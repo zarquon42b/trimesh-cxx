@@ -1,4 +1,4 @@
-TARGET = ply2ascii
+TARGET = ../../../bin/ply2ascii
 DEPENDPATH += . 
 INCLUDEPATH += . ../..
 CONFIG += console stl 
