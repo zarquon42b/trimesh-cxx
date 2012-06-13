@@ -305,8 +305,12 @@ int main(int argc,char ** argv){
 			int f_i = vcg::tri::Index(mesh, f_ptr);
 			MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
 			ti = ti/sqrt(ti.dot(ti));
+			Point3f dif = clost - currp;
+			float signo = dif.dot(ti);	
+			if (signo < 0)
+			  { out_cloud.vert[i].Q() = -out_cloud.vert[i].Q() ;
+			  }
 			out_cloud.vert[i].N() = ti;
-			out_cloud.vert[i].P() = clost;
 			angfail = true;
 		      }
 		  }
@@ -371,8 +375,12 @@ int main(int argc,char ** argv){
 		    int f_i = vcg::tri::Index(mesh, f_ptr);
 		    MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
 		    ti = ti/sqrt(ti.dot(ti));
+		    Point3f dif = clost - currp;
+		    float signo = dif.dot(ti);	
+		    if (signo < 0)
+		      { out_cloud.vert[i].Q() = -out_cloud.vert[i].Q() ;
+		      }
 		    out_cloud.vert[i].N() = ti;
-		    out_cloud.vert[i].P() = clost;
 		  }
 	      }
             else
@@ -390,10 +398,14 @@ int main(int argc,char ** argv){
                 int f_i = vcg::tri::Index(mesh, f_ptr);
                 MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
                 ti = ti/sqrt(ti.dot(ti));
+		Point3f dif = clost - currp;
+		float signo = dif.dot(ti);	
+		if (signo < 0)
+		  { out_cloud.vert[i].Q() = -out_cloud.vert[i].Q() ;
+		  }
 		out_cloud.vert[i].N() = ti;
-                out_cloud.vert[i].P() = clost;
 	      }
-          }
+      }
 	
 	in_cloud.vert[i].P()=out_cloud.vert[i].P();
 	in_cloud.vert[i].Q()=out_cloud.vert[i].Q();
