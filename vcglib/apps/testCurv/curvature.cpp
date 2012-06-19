@@ -142,7 +142,10 @@ if (col == false && noclean == false)
   
   tri::Allocator<MyMesh>::CompactVertexVector(mesh);
   tri::UpdateCurvature<MyMesh>::MeanAndGaussian(mesh);
-  tri::UpdateQuality<MyMesh>::VertexFromRMSCurvature(mesh);  
+  //tri::UpdateQuality<MyMesh>::VertexFromRMSCurvature(mesh);  
+  //tri::UpdateQuality<MyMesh>::VertexFromRMSCurvature(mesh);  
+  tri::UpdateQuality<MyMesh>::VertexFromMeanCurvature(mesh);  
+
   // vcg::CallBackPos *cb;
 
   
