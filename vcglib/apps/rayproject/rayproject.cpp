@@ -64,16 +64,16 @@ int main(int argc,char ** argv){
 		printf("\n");
     printf("    Compute a projection of a point cloud onto a mesh along given rays\n");
     printf("    Usage: rayproject <reference mesh> < targetmesh> [-t | -cloud | --inbound | --strict | --minray | -o] \n");
-    printf("       <reference mesh>        Point cloud over which to project (PLY format).\n");
-    printf("       <target mesh>         Mesh model over which to project (PLY format).\n");
-    printf("       -t <threshold> - delimits max distance to seek along ray. default is 10\n");
-    printf("       -cloud - vertex normals have to be computed individually.\n");
-    printf("       --inbound - search will be along oposite of normal first.\n");
-    printf("       --strict - this options will write the value 1e12 into Vertex quality.\n");
-    printf("                  if no face is hit by the ray.\n");
-    printf("       --minray - find the closest point looking in both directions.\n");
-    printf("       -o <output.ply> - define output filename (and path) default is project.mesh.ply.\n");
-
+    printf("       <reference mesh>    - Point cloud over which to project (PLY format).\n");
+    printf("       <target mesh>       - Mesh model over which to project (PLY format).\n");
+    printf("       -t <threshold>      - delimits max distance to seek along ray. default is 10\n");
+    printf("       -cloud              - vertex normals have to be computed individually.\n");
+    printf("       --inbound           - search will be along oposite of normal first.\n");
+    printf("       --strict            - this options will write the value 1e12 into Vertex quality.\n");
+    printf("                             if no face is hit by the ray.\n");
+    printf("       --minray            - find the closest point looking in both directions.\n");
+    printf("       -o <output.ply>     - define output filename (and path) default is project.mesh.ply.\n");
+    printf("       --angmax <value>    - chose maximum angle (in radians) of normals to differ.\n");
     printf("\n");    
     printf("projects the vertices of the reference mesh along their normals onto the target mesh when terminated.\n");
     //printf("The vertex coordinates represent the projected samples (in same order as input.\n");
