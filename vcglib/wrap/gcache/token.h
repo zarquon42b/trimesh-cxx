@@ -1,7 +1,7 @@
 #ifndef GCACHE_TOKEN_H
 #define GCACHE_TOKEN_H
 
-#include <QAtomicInt>
+#include <wrap/system/multithreading/atomic_int.h>
 
 /* QAtomic int count keep trak of token status:
    >0: locked (possibly multiple times)
@@ -15,6 +15,7 @@
     The Priority template argument can simply be a floating point number
     or something more complex, (frame and error in pixel); the only
     requirement is the existence of a < comparison operator */
+namespace vcg {
 
 template <typename Priority>
 class Token {
@@ -28,13 +29,11 @@ class Token {
   enum Status { LOCKED = 1, READY = 0, CACHE = -1, REMOVE = -2, OUTSIDE = -3 };
   ///Do not access these members directly. Will be moved to private shortly.
   ///used by various cache threads to sort objects [do not use, should be private]
-  Priority priority; 
+  Priority priority;
   ///set in the main thread   [do not use, should be private]
-  Priority new_priority;     
+  Priority new_priority;
   ///swap space used in updatePriorities [do not use, should be private]
-  Priority tmp_priority;     
-  ///reference count of locked items [do not use, should be private]
-  QAtomicInt count;          
+  mt::atomicInt count;
 
  public:
   Token(): count(OUTSIDE) {}
@@ -43,6 +42,7 @@ class Token {
   void setPriority(const Priority &p) {
     new_priority = p;
   }
+  //set and get are safe to call in the controller thread.
   Priority getPriority() {
     return new_priority;
   }
@@ -53,7 +53,7 @@ class Token {
     return false;
   }
   ///assumes it was locked first and 1 unlock for each lock.
-  bool unlock() {  
+  bool unlock() {
     return count.deref();
   }
 
@@ -69,11 +69,7 @@ class Token {
 
   ///copy priority to swap space [do not use, should be private]
   void pushPriority() {
-    tmp_priority = new_priority;
-  }
-  ///copy priority from swap space [do not use, should be private]
-  void pullPriority() {
-    priority = tmp_priority;
+    priority = new_priority;
   }
 
   bool operator<(const Token &a) const {
@@ -88,4 +84,5 @@ class Token {
   }
 };
 
+} //namespace
 #endif // GCACHE_H

@@ -108,8 +108,8 @@ The geodesic distance is approximated by allowing to walk only along edges of th
 static void VertexGeodesicFromBorder(MeshType &m)	// R1
 {
 	//Requirements
-	assert(m.HasVFTopology());
-	assert(m.HasPerVertexQuality());
+  assert(HasPerVertexVFAdjacency(m) && HasPerFaceVFAdjacency(m));
+  assert(HasPerVertexQuality(m));
 
   std::vector< VQualityHeap > heap;
 	VertexIterator v;
@@ -230,11 +230,20 @@ static void FaceArea(MeshType &m)
 		(*fi).Q()=vcg::DoubleArea(*fi)/2;
 }
 
-static void VertexFromPlane(MeshType &m, Plane3<ScalarType> &pl)
+static void FaceFromVertex( MeshType &m)
+{
+	FaceIterator fi;
+	for(fi=m.face.begin();fi!=m.face.end();++fi) if(!(*fi).IsD())
+	{
+		(*fi).Q() = ((*fi).V(0)->Q()+(*fi).V(1)->Q()+(*fi).V(2)->Q())/3.0f;
+	}
+}
+
+static void VertexFromPlane(MeshType &m, const Plane3<ScalarType> &pl)
 {
   VertexIterator vi;
   for(vi=m.vert.begin();vi!=m.vert.end();++vi) if(!(*vi).IsD())
-    (*vi).Q() =Distance(pl,(*vi).cP());
+    (*vi).Q() =SignedDistancePlanePoint(pl,(*vi).cP());
 }
 
 static void VertexFromGaussianCurvature(MeshType &m)

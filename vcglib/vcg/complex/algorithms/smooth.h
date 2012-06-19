@@ -71,7 +71,7 @@ public:
 // This is precisely what curvature flow does.
 // Curvature flow smoothes the surface by moving along the surface
 // normal n with a speed equal to the mean curvature
-void VertexCoordLaplacianCurvatureFlow(MeshType &m, int step, ScalarType delta)
+void VertexCoordLaplacianCurvatureFlow(MeshType &/*m*/, int /*step*/, ScalarType /*delta*/)
 {
 
 }
@@ -809,6 +809,9 @@ static void VertexCoordViewDepth(MeshType &m,
 //  The proposed
 // approach is a two step method where  in the first step the face normals
 // are adjusted and then, in a second phase, the vertex positions are updated.
+// Ref:
+// A. Belyaev and Y. Ohtake, A Comparison of Mesh Smoothing Methods, Proc. Israel-Korea Bi-Nat"l Conf. Geometric Modeling and Computer Graphics, pp. 83-87, 2003.
+
 /****************************************************************************************************************/
 /****************************************************************************************************************/
 // Classi di info
@@ -952,30 +955,30 @@ static void FaceNormalLaplacianVF(MeshType &m)
 
 static void FaceNormalLaplacianFF(MeshType &m, int step=1, bool SmoothSelected=false )
 {
-	PDFaceInfo lpzf;
-	lpzf.m=CoordType(0,0,0);
-	SimpleTempData<typename MeshType::FaceContainer, PDFaceInfo> TDF(m.face,lpzf);
-	assert(tri::HasFFAdjacency(m));
+  PDFaceInfo lpzf;
+  lpzf.m=CoordType(0,0,0);
+  SimpleTempData<typename MeshType::FaceContainer, PDFaceInfo> TDF(m.face,lpzf);
+  assert(tri::HasFFAdjacency(m));
 
   FaceIterator fi;
-	tri::UpdateNormals<MeshType>::AreaNormalizeFace(m);
-  for(int i=0;i<step;++i)
-		{
-				for(fi=m.face.begin();fi!=m.face.end();++fi) if(!(*fi).IsD())
-				{
-							CoordType normalSum=(*fi).N();
+  tri::UpdateNormals<MeshType>::AreaNormalizeFace(m);
+  for(int iStep=0;iStep<step;++iStep)
+  {
+    for(fi=m.face.begin();fi!=m.face.end();++fi) if(!(*fi).IsD())
+    {
+      CoordType normalSum=(*fi).N();
 
-							for(i=0;i<3;++i)
-										normalSum+=(*fi).FFp(i)->N();
+      for(int i=0;i<3;++i)
+        normalSum+=(*fi).FFp(i)->N();
 
-							TDF[*fi].m=normalSum;
-				}
-				for(fi=m.face.begin();fi!=m.face.end();++fi)
-						if(!SmoothSelected || (*fi).IsS())
-								(*fi).N()=TDF[*fi].m;
+      TDF[*fi].m=normalSum;
+    }
+    for(fi=m.face.begin();fi!=m.face.end();++fi)
+      if(!SmoothSelected || (*fi).IsS())
+        (*fi).N()=TDF[*fi].m;
 
-				tri::UpdateNormals<MeshType>::NormalizeFace(m);
-		}
+    tri::UpdateNormals<MeshType>::NormalizeFace(m);
+  }
 }
 
 
@@ -1053,7 +1056,7 @@ static void FaceNormalAngleThreshold(MeshType &m,
 // Nota che dovrebbe essere sempre un vettore che giace nel piano del triangolo e perpendicolare al lato opposto al vertice p.
 // Ottimizzato con Maple e poi pesantemente a mano.
 
-CoordType TriAreaGradient(CoordType &p,CoordType &p0,CoordType &p1)
+static CoordType TriAreaGradient(CoordType &p,CoordType &p0,CoordType &p1)
 {
 	CoordType dd = p1-p0;
 	CoordType d0 = p-p0;
@@ -1074,7 +1077,7 @@ CoordType TriAreaGradient(CoordType &p,CoordType &p0,CoordType &p1)
 }
 
 template <class ScalarType>
-CoordType CrossProdGradient(CoordType &p, CoordType &p0, CoordType &p1, CoordType &m)
+static CoordType CrossProdGradient(CoordType &p, CoordType &p0, CoordType &p1, CoordType &m)
 {
 	CoordType grad;
 	CoordType p00=p0-p;
@@ -1097,7 +1100,7 @@ A(...) (2-2nm)   =
 2A  -  2 (p0-p)^(p1-p) * m
 */
 
-CoordType FaceErrorGrad(CoordType &p,CoordType &p0,CoordType &p1, CoordType &m)
+static CoordType FaceErrorGrad(CoordType &p,CoordType &p0,CoordType &p1, CoordType &m)
 {
 	return     TriAreaGradient(p,p0,p1) *2.0f
 		- CrossProdGradient(p,p0,p1,m) *2.0f ;
@@ -1107,7 +1110,7 @@ CoordType FaceErrorGrad(CoordType &p,CoordType &p0,CoordType &p1, CoordType &m)
 /***************************************************************************/
 
 
-void FitMesh(MeshType &m,
+static void FitMesh(MeshType &m,
 			 SimpleTempData<typename MeshType::VertContainer, PDVertInfo> &TDV,
 			 SimpleTempData<typename MeshType::FaceContainer, PDFaceInfo> &TDF,
 			 float lambda)

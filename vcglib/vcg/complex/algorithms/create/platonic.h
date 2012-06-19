@@ -28,6 +28,9 @@
 #include<vcg/complex/allocate.h>
 #include<vcg/complex/algorithms/refine.h>
 #include<vcg/complex/algorithms/update/flag.h>
+#include<vcg/complex/algorithms/update/position.h>
+#include<vcg/complex/algorithms/update/bounding.h>
+
 
 namespace vcg {
 namespace tri {
@@ -168,7 +171,7 @@ void Dodecahedron(DodMeshType & in)
 		  (*fi).V(0)=index[added[i] ];
 	    (*fi).V(1)=index[reindex[penta[i*9 + order[j      ] ] -1 ] ]; 
 	    (*fi).V(2)=index[reindex[penta[i*9 + order[(j+1)%5] ] -1 ] ];  
-	    if (in.HasPerFaceFlags()) {
+		if (HasPerFaceFlags(in)) {
   	    // tag faux edges
         (*fi).SetF(0);
         (*fi).SetF(2);
@@ -309,7 +312,7 @@ void Hexahedron(MeshType &in)
  (*fi).V(0)=ivp[7];  (*fi).V(1)=ivp[3]; (*fi).V(2)=ivp[5]; ++fi;
  (*fi).V(0)=ivp[1];  (*fi).V(1)=ivp[5]; (*fi).V(2)=ivp[3]; 
  
-  if (in.HasPerFaceFlags()) {
+  if (HasPerFaceFlags(in)) {
     FaceIterator fi=in.face.begin();
     for (int k=0; k<12; k++) {
       (*fi).SetF(1); fi++;
@@ -343,7 +346,7 @@ void Square(MeshType &in)
   (*fi).V(0)=ivp[0];  (*fi).V(1)=ivp[1]; (*fi).V(2)=ivp[2]; ++fi;
   (*fi).V(0)=ivp[2];  (*fi).V(1)=ivp[3]; (*fi).V(2)=ivp[0]; 
 
-  if (in.HasPerFaceFlags()) {
+  if (HasPerFaceFlags(in)) {
     FaceIterator fi=in.face.begin();
     for (int k=0; k<2; k++) {
       (*fi).SetF(2); fi++;
@@ -517,7 +520,7 @@ void Box(MeshType &in, const typename MeshType::BoxType & bb )
  (*fi).V(0)=ivp[7];  (*fi).V(1)=ivp[3]; (*fi).V(2)=ivp[5]; ++fi;
  (*fi).V(0)=ivp[1];  (*fi).V(1)=ivp[5]; (*fi).V(2)=ivp[3]; 
  
- if (in.HasPerFaceFlags()) {
+ if (HasPerFaceFlags(in)) {
     FaceIterator fi=in.face.begin();
     for (int k=0; k<12; k++) {
       (*fi).SetF(1); fi++;
@@ -585,24 +588,26 @@ void Build( MeshType & in, const V & v, const F & f)
 // Once generated the vertex positions it uses the FaceGrid function to generate the faces;
 
 template <class MeshType>
-void Grid(MeshType & in, int w, int h, float wl, float hl, float *data)
+void Grid(MeshType & in, int w, int h, float wl, float hl, float *data=0)
 {
- typedef typename MeshType::CoordType CoordType;
- typedef typename MeshType::VertexPointer  VertexPointer;
- typedef typename MeshType::VertexIterator VertexIterator;
- typedef typename MeshType::FaceIterator   FaceIterator;
+  typedef typename MeshType::CoordType CoordType;
+  typedef typename MeshType::VertexPointer  VertexPointer;
+  typedef typename MeshType::VertexIterator VertexIterator;
+  typedef typename MeshType::FaceIterator   FaceIterator;
 
   in.Clear();
-	Allocator<MeshType>::AddVertices(in,w*h);
+  Allocator<MeshType>::AddVertices(in,w*h);
 
-
-  float wld=wl/float(w);
-  float hld=hl/float(h);
-
+  float wld=wl/float(w-1);
+  float hld=hl/float(h-1);
+  float zVal=0;
   for(int i=0;i<h;++i)
     for(int j=0;j<w;++j)
-      in.vert[i*w+j].P()=CoordType ( j*wld, i*hld, data[i*w+j]);
- FaceGrid(in,w,h);
+    {
+      if(data) zVal=data[i*w+j];
+      in.vert[i*w+j].P()=CoordType ( j*wld, i*hld, zVal) ;
+    }
+  FaceGrid(in,w,h);
 }
 
 
@@ -636,7 +641,7 @@ void FaceGrid(MeshType & in, int w, int h)
       in.face[2*(i*(w-1)+j)+1].V(2) = &(in.vert[(i+1)*w+j+1]);
     }
     
-  if (in.HasPerFaceFlags()) {
+  if (HasPerFaceFlags(in)) {
     for (int k=0; k<(h-1)*(w-1)*2; k++) {
       in.face[k].SetF(2);
     }
@@ -674,7 +679,7 @@ void FaceGrid(MeshType & in, const std::vector<int> &grid, int w, int h)
 			int V3i= grid[(i+1)*w+j+1];
 			
 			int ndone=0;
-			bool quad = (V0i>=0 && V1i>=0 && V2i>=0 && V3i>=0 ) && in.HasPerFaceFlags();
+			bool quad = (V0i>=0 && V1i>=0 && V2i>=0 && V3i>=0 ) && tri::HasPerFaceFlags(in);
 			
 			if(V0i>=0 && V2i>=0 && V3i>=0 )
 			{
@@ -716,6 +721,50 @@ void FaceGrid(MeshType & in, const std::vector<int> &grid, int w, int h)
       
       
     }
+}
+
+
+template <class MeshType>
+void Disk(MeshType & m, int slices)
+{
+  m.Clear();
+  typename MeshType::VertexIterator vi = vcg::tri::Allocator<MeshType>::AddVertices(m,slices+1);
+  (*vi).P() = typename MeshType::CoordType(0,0,0);
+  ++vi;
+
+  for ( int j = 0; j < slices; ++j)
+  {
+    float x,y;
+    x = cos(	2.0 * M_PI / slices * j);
+    y = sin(	2.0 * M_PI / slices * j);
+
+    (*vi).P() = typename MeshType::CoordType(x,y,0);
+    ++vi;
+  }
+  typename MeshType::FaceIterator fi ;
+  for ( int j = 0; j < slices; ++j)
+  {
+    int a =  1+(j+0)%slices;
+    int b =  1+(j+1)%slices;
+    fi = vcg::tri::Allocator<MeshType>::AddFaces(m,1);
+    (*fi).V(0) = &m.vert[ 0 ];
+    (*fi).V(1) = &m.vert[ a ];
+    (*fi).V(2) = &m.vert[ b ];
+  }
+}
+
+template <class MeshType>
+void OrientedDisk(MeshType &m, int slices, Point3f center, Point3f norm, float radius)
+{
+  Disk(m,slices);
+  tri::UpdatePosition<MeshType>::Scale(m,radius);
+  float angleRad = Angle(Point3f(0,0,1),norm);
+  Point3f axis = Point3f(0,0,1)^norm;
+
+  Matrix44f rotM;
+  rotM.SetRotateRad(angleRad,axis);
+  tri::UpdatePosition<MeshType>::Matrix(m,rotM);
+  tri::UpdatePosition<MeshType>::Translate(m,center);
 }
 
 template <class MeshType>
@@ -768,7 +817,7 @@ void Cylinder(int slices, int stacks, MeshType & m){
 			 }
     }
     
-   if (m.HasPerFaceFlags()) {
+   if (HasPerFaceFlags(m)) {
      for (typename MeshType::FaceIterator fi=m.face.begin(); fi!=m.face.end(); fi++) {
        (*fi).SetF(2);
      }
@@ -821,6 +870,31 @@ void GenerateCameraMesh(MeshType &in){
 		in.face[j].V(2)=index[ff[j][2]];
 	}
 }
+
+template <class MeshType>
+void OrientedRect(MeshType &square, float width, float height, Point3f c, Point3f dir=Point3f(0,0,0), float angleDeg=0,Point3f preRotTra = Point3f(0,0,0))
+{
+  float zeros[4]={0,0,0,0};
+  square.Clear();
+  Matrix44f rotM;
+  tri::Grid(square,2,2,width,height,zeros);
+  tri::UpdatePosition<MeshType>::Translate(square,Point3f(-width/2.0f,-height/2.0f,0.0f));
+  if(angleDeg!=0){
+    tri::UpdatePosition<MeshType>::Translate(square,preRotTra);
+    rotM.SetRotateDeg(angleDeg,dir);
+    tri::UpdatePosition<MeshType>::Matrix(square,rotM);
+  }
+  tri::UpdatePosition<MeshType>::Translate(square,c);
+  tri::UpdateBounding<MeshType>::Box(square);
+}
+
+template <class MeshType>
+void OrientedSquare(MeshType &square, float width, Point3f c, Point3f dir=Point3f(0,0,0), float angleDeg=0,Point3f preRotTra = Point3f(0,0,0))
+{
+  OrientedRect(square,width,width,c,dir,angleDeg,preRotTra);
+}
+
+
 
 //@}
 

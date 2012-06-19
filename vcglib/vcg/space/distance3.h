@@ -30,11 +30,37 @@
 
 namespace vcg {
 
+
+/*
+* Computes the minimum distance between a 3D box and a point
+* @param[in] p				The input point
+* @param[in] b				The input bounding box
+* return			The distance
+* This function returns 0 for points Inside the bbox while the next one return the distance from the surface
+*/
+template<class Scalar>
+Scalar PointFilledBoxDistance(const Point3<Scalar> &p, const Box3<Scalar> &bbox)
+{
+	Scalar dist2 = 0.;
+	Scalar aux;
+	for (int k=0 ; k<3 ; ++k)
+	{
+		if ( (aux = (p[k]-bbox.min[k]))<0. )
+			dist2 += aux*aux;
+		else if ( (aux = (bbox.max[k]-p[k]))<0. )
+			dist2 += aux*aux;
+	}
+	return sqrt(dist2);
+}
+
 /*
 * Computes the minimum distance between a 3D box and a point
 * @param[in] p				The input point
 * @param[in] b				The input bounding box
 * @param[out] dist			The distance
+* Note that this function with respect to the previous one compute the distance between a point
+* and the 'surface' of a Box3. 
+* 
 */
 template <class ScalarType> 
 void PointBoxDistance(const Point3<ScalarType> &p,
@@ -49,8 +75,9 @@ void PointBoxDistance(const Point3<ScalarType> &p,
 		const ScalarType dz = std::min<ScalarType>(b.max.Z()-p.Z(), p.Z()-b.min.Z());
 
 		dist= std::min<ScalarType>(dx, std::min<ScalarType>(dy, dz));
+		return;
 	}
-
+    
 	{
 		ScalarType sq_dist = ScalarType(0);
 		for (int i=0; i<3; ++i)
@@ -81,7 +108,7 @@ void SpherePointDistance(const Sphere3<ScalarType> &sphere,
 }
 
 /*
-* Computes the minimum distance between a 3D box and a point
+* Computes the minimum distance between two spheres
 * @param[in] sphere0				The input sphere
 * @param[in] sphere1				The input sphere
 * @param[out] dist			The distance
@@ -197,34 +224,25 @@ void LineLineDistance(const vcg::Line3<ScalarType> &mLine0,
 template <class ScalarType> 
 void SegmentPointSquaredDistance( Segment3<ScalarType> s, 
 																							 const Point3<ScalarType> & p,
-																							 Point3< ScalarType > &clos,
+																							 Point3< ScalarType > &closest,
 																							 ScalarType &sqr_dist) 
 {
-	///create a line
-	vcg::Line3<ScalarType> l;
-	l.Set(s.P0(),s.P1()-s.P0());
-	l.Normalize();
-
-	///take the closest point on a Line
-	vcg::LinePointSquaredDistance(l,p,clos,sqr_dist);
-
-	///quick test with a BB
-	vcg::Box3<ScalarType> b;
-	b.Add(s.P0());
-	b.Add(s.P1());
-	///if the point is in the BB since it is ALSO along the line 
-	///means that it is also along the SEGMENT
-	if (b.IsIn(clos))
-		return;
+	Point3<ScalarType> e = s.P1()-s.P0();
+	ScalarType EPS=0.00000001;
+	if (e.Norm()<EPS)
+	{
+		Point3<ScalarType> AvP=(s.P0()+s.P1())/2.0;
+		closest=AvP;
+		sqr_dist=(AvP-p).Norm();
+	}
 	else
 	{
-		///check the extremes
-		ScalarType d0=(s.P0()-p).SquaredNorm();
-		ScalarType d1=(s.P1()-p).SquaredNorm();
-		if (d0<d1)
-			clos= (s.P0());
-		else
-			clos= (s.P1());
+		ScalarType  t = ((p-s.P0())*e)/e.SquaredNorm();
+		if(t<0)      t = 0;
+		else if(t>1) t = 1;
+		closest = s.P0()+e*t;
+		sqr_dist = SquaredDistance(p,closest);
+		assert(!math::IsNAN(sqr_dist));
 	}
 }
 

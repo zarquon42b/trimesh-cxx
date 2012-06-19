@@ -1,8 +1,7 @@
 #ifndef GCACHE_PROVIDER_H
 #define GCACHE_PROVIDER_H
 
-
-#include <QMutex>
+#include <wrap/system/multithreading/mt.h>
 #include "dheap.h"
 #include "door.h"
 
@@ -14,34 +13,35 @@
       2) set maximum number of tokens in the provider
 */
 
-/** Base class for Cache and last cache in the GCache system. 
+/** Base class for Cache and last cache in the GCache system.
     You should never interact with this class.
 */
 
+namespace vcg {
+
 template <typename Token>
-class Provider: public QThread {
+class Provider: public mt::thread {
  public:
   ///holds the resources in this cache but not in the cache above
-  PtrDHeap<Token> heap;  
+  PtrDHeap<Token> heap;
   ///tokens above this number will be scheduled for deletion
   int max_tokens;
   ///signals we need to rebuild heap.
-  bool heap_dirty;         
-  ///lock this before manipulating heap.   
-  QMutex heap_lock;    
-  ///used to sincronize priorities update        
-  QMutex priority_lock;        
+  bool heap_dirty;
+  ///lock this before manipulating heap.
+  mt::mutex heap_lock;
   ///signals (to next cache!) priorities have changed or something is available
-  QDoor check_queue;           
+  QDoor check_queue;
 
   Provider(): max_tokens(-1), heap_dirty(false) {}
   virtual ~Provider() {}
 
-  /// [should be protected, do not use]
+  /// [should be protected, do not use] called in controller thread!
   void pushPriorities() {
-    QMutexLocker locker(&priority_lock);
+    mt::mutexlocker locker(&heap_lock);
     for(int i = 0; i < heap.size(); i++)
       heap[i].pushPriority();
+
     heap_dirty = true;
     check_queue.open();
   }
@@ -49,13 +49,8 @@ class Provider: public QThread {
   void rebuild() {
     if(!this->heap_dirty) return;
 
-    {
-      QMutexLocker locker(&priority_lock);
-      for(int i = 0; i < this->heap.size(); i++)
-        this->heap[i].pullPriority();
-      this->heap_dirty = false;
-    }
     this->heap.rebuild();
+    this->heap_dirty = false;
 
     //remove OUTSIDE tokens from bottom of heap
     if(max_tokens != -1) {
@@ -70,7 +65,7 @@ class Provider: public QThread {
   ///ensure no locked item are to be removed [should be protected, do not use]
   template <class FUNCTOR> void flush(FUNCTOR functor) {
     int count = 0;
-    QMutexLocker locker(&(this->heap_lock));
+    mt::mutexlocker locker(&(this->heap_lock));
     for(int k = 0; k < this->heap.size(); k++) {
       Token *token = &this->heap[k];
       if(functor(token)) { //drop it
@@ -83,5 +78,5 @@ class Provider: public QThread {
   }
 };
 
-
-#endif 
+} //namespace
+#endif

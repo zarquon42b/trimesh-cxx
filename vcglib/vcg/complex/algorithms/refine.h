@@ -126,13 +126,13 @@ struct MidPoint : public   std::unary_function<face::Pos<typename MESH_TYPE::Fac
 		assert(mp);
 		nv.P()=   (ep.f->V(ep.z)->P()+ep.f->V1(ep.z)->P())/2.0;
 
-		if( MESH_TYPE::HasPerVertexNormal())
+		if( tri::HasPerVertexNormal(*mp))
 			nv.N()= (ep.f->V(ep.z)->N()+ep.f->V1(ep.z)->N()).normalized();
 
-		if( MESH_TYPE::HasPerVertexColor())
+		if( tri::HasPerVertexColor(*mp))
 			nv.C().lerp(ep.f->V(ep.z)->C(),ep.f->V1(ep.z)->C(),.5f);
 		
-		if( MESH_TYPE::HasPerVertexQuality())
+		if( tri::HasPerVertexQuality(*mp))
 			nv.Q() = ((ep.f->V(ep.z)->Q()+ep.f->V1(ep.z)->Q())) / 2.0;
 
 		if( tri::HasPerVertexTexCoord(*mp))
@@ -538,6 +538,9 @@ Siggraph 2000 Course Notes
 template<class MESH_TYPE>
 struct MidPointButterfly : public std::unary_function<face::Pos<typename MESH_TYPE::FaceType> , typename MESH_TYPE::CoordType>
 {
+  MESH_TYPE &m;
+  MidPointButterfly(MESH_TYPE &_m):m(_m){}
+
 	void operator()(typename MESH_TYPE::VertexType &nv, face::Pos<typename MESH_TYPE::FaceType>  ep)
 	{	
 		face::Pos<typename MESH_TYPE::FaceType> he(ep.f,ep.z,ep.f->V(ep.z));
@@ -548,7 +551,7 @@ struct MidPointButterfly : public std::unary_function<face::Pos<typename MESH_TY
 		he.FlipV();
 		vr=&he.v->P();
 		
-		if( MESH_TYPE::HasPerVertexColor())
+		if( tri::HasPerVertexColor(m))
 			nv.C().lerp(ep.f->V(ep.z)->C(),ep.f->V1(ep.z)->C(),.5f);
 
 		if(he.IsBorder())
@@ -789,7 +792,7 @@ class QualityEdgePredicate
     {
     ScalarType q0=ep.f->V0(ep.z)->Q()-thr;
     ScalarType q1=ep.f->V1(ep.z)->Q()-thr;
-    if(q0>q1) swap(q0,q1);
+    if(q0>q1) std::swap(q0,q1);
     if ( q0*q1 > 0) return false;
     // now a small check to be sure that we do not make too thin crossing.
     double pp= q0/(q0-q1);

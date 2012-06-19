@@ -684,7 +684,6 @@ static void FaceSubdivision(MetroMesh & m, VertexSampler &ps,int sampleNum, bool
 	std::vector<FacePointer> faceVec;
 	FillAndShuffleFacePointerVector(m,faceVec);
 	vcg::tri::UpdateNormals<MetroMesh>::PerFaceNormalized(m);
-    vcg::tri::UpdateFlags<MetroMesh>::FaceProjection(m);
 	double  floatSampleNum = 0.0;
 	int faceSampleNum;
     // Subdivision sampling.
@@ -777,7 +776,6 @@ static void FaceSubdivisionOld(MetroMesh & m, VertexSampler &ps,int sampleNum, b
     std::vector<FacePointer> faceVec;
     FillAndShuffleFacePointerVector(m,faceVec);
     tri::UpdateNormals<MetroMesh>::PerFaceNormalized(m);
-    tri::UpdateFlags<MetroMesh>::FaceProjection(m);
     double  floatSampleNum = 0.0;
     int faceSampleNum;
     // Subdivision sampling.
@@ -1079,7 +1077,7 @@ static VertexPointer getPrecomputedMontecarloSample(Point3i &cell, MontecarloSHT
 }
 
 // check the radius constrain
-static bool checkPoissonDisk(MetroMesh & vmesh, SampleSHT & sht, const Point3<ScalarType> & p, ScalarType radius) 
+static bool checkPoissonDisk(SampleSHT & sht, const Point3<ScalarType> & p, ScalarType radius)
 {
 	// get the samples closest to the given one
 	std::vector<VertexType*> closests;
@@ -1087,7 +1085,7 @@ static bool checkPoissonDisk(MetroMesh & vmesh, SampleSHT & sht, const Point3<Sc
   static MarkerVert mv;
 
 	Box3f bb(p-Point3f(radius,radius,radius),p+Point3f(radius,radius,radius));
-	int nsamples = GridGetInBox(sht, mv, bb, closests);
+	GridGetInBox(sht, mv, bb, closests);
 
   ScalarType r2 = radius*radius;
 	for(int i=0; i<closests.size(); ++i)
@@ -1330,7 +1328,7 @@ static void PoissonDisk(MetroMesh &origMesh, VertexSampler &ps, MetroMesh &monte
 			// vr spans between 3.0*r and r / 4.0 according to vertex quality
 			ScalarType sampleRadius = diskRadius;
 			if(pp.adaptiveRadiusFlag)  sampleRadius = sp->Q();
-            if (checkPoissonDisk(*ps.m, checkSHT, sp->cP(), sampleRadius))
+			if (checkPoissonDisk(checkSHT, sp->cP(), sampleRadius))
             {
                ps.AddVert(*sp);
                montecarloSHT.RemoveCell(sp);
@@ -1454,6 +1452,39 @@ static void SubdivideAndSample(MetroMesh & m, std::vector<Point3f> &pvec, const 
 		}
 } 
 }; // end class
+
+
+
+// Yet another simpler wrapper for the Generation of a poisson disk distribution over a mesh.
+//
+template <class MeshType>
+void PoissonSampling(MeshType &m, // the mesh that has to be sampled
+                     std::vector<Point3f> &poissonSamples, // the vector that will contain the set of points
+                     int sampleNum, // the desired number sample, if zero you must set the radius to the wanted value
+                     float &radius) // the Poisson Disk Radius (used if sampleNum==0, setted if sampleNum!=0)
+{
+  typedef tri::TrivialSampler<MeshType> BaseSampler;
+  if(sampleNum>0) radius = tri::SurfaceSampling<MeshType,BaseSampler>::ComputePoissonDiskRadius(m,sampleNum);
+  if(radius>0 && sampleNum==0) sampleNum = tri::SurfaceSampling<MeshType,BaseSampler>::ComputePoissonSampleNum(m,radius);
+
+  poissonSamples.clear();
+  std::vector<Point3f> MontecarloSamples;
+  MeshType MontecarloMesh;
+
+  // First step build the sampling
+  BaseSampler mcSampler(MontecarloSamples);
+  BaseSampler pdSampler(poissonSamples);
+
+  tri::SurfaceSampling<MeshType,BaseSampler>::Montecarlo(m, mcSampler, std::max(10000,sampleNum*20));
+
+  tri::Allocator<MeshType>::AddVertices(MontecarloMesh,MontecarloSamples.size());
+  for(size_t i=0;i<MontecarloSamples.size();++i)
+    MontecarloMesh.vert[i].P()=MontecarloSamples[i];
+
+  typename tri::SurfaceSampling<MeshType, BaseSampler>::PoissonDiskParam pp;
+
+    tri::SurfaceSampling<MeshType,BaseSampler>::PoissonDiskPruning(m, pdSampler, m, radius,pp);
+}
 
 
 } // end namespace tri

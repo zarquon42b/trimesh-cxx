@@ -166,8 +166,7 @@ public:
   inline void lerp(const Color4 &c0, const Color4 &c1, const float x);
 	inline void lerp(const Color4 &c0, const Color4 &c1, const Color4 &c2, const Point3f &ip);
   /// given a float and a range set the corresponding color in the well known red->green->blue color ramp. To reverse the direction of the ramp just swap minf and maxf.
-	inline void ColorRamp(const float &minf,const float  &maxf ,float v );
-
+    inline void SetColorRamp(const float &minf,const float  &maxf ,float v );
 	inline void SetRGB( unsigned char r, unsigned char g, unsigned char b )
 	{
 		(*this)[0] = r;
@@ -225,30 +224,36 @@ inline void SetGrayShade(float f)
 /** Given an integer returns a well ordering of colors
 // so that every color differs as much as possible form the previous one
 // params:
-//		n is the maximum expected value (max of the range)
-//		v is the requested position
+//		range is the maximum expected value (max of the range)
+//		value is the requested position (it must be <range);
 */
-inline static Color4 Scatter(int n, int a,float Sat=.3f,float Val=.9f)
+inline static Color4 Scatter(int range, int value,float Sat=.3f,float Val=.9f)
 {
-  int b, k, m=n;
-  int r =n;
+  int b, k, m=range;
+  int r =range;
 
-    for (b=0, k=1; k<n; k<<=1)
-			if (a<<1>=m) {
+	for (b=0, k=1; k<range; k<<=1)
+			if (value<<1>=m) {
 				if (b==0) r = k;
 				b += k;
-				a -= (m+1)>>1;
+				value -= (m+1)>>1;
 				m >>= 1;
 			}
 	else m = (m+1)>>1;
-	if (r>n-b) r = n-b;
+	if (r>range-b) r = range-b;
 
 	//TRACE("Scatter range 0..%i, in %i out %i\n",n,a,b);
 	Color4 rc;
-	rc.SetHSVColor(float(b)/float(n),Sat,Val);
+	rc.SetHSVColor(float(b)/float(range),Sat,Val);
 	return rc;
 }
 
+inline static Color4 ColorRamp(const float &minf,const float  &maxf ,float v )
+{
+  Color4 rc;
+  rc.SetColorRamp(minf,maxf,v);
+  return rc;
+}
 };
 template <class T>
 inline void Color4<T>::lerp(const Color4<T> &c0, const Color4<T> &c1, const float x)
@@ -273,11 +278,10 @@ inline void Color4<T>::lerp(const Color4<T> &c0, const Color4<T> &c1, const Colo
 	(*this)[3]=(T)(c0[3]*ip[0] + c1[3]*ip[1]+ c2[3]*ip[2]);
 }
 
-
 template <class T>
-inline void Color4<T>::ColorRamp(const float &minf,const float  &maxf ,float v )
+inline void Color4<T>::SetColorRamp(const float &minf,const float  &maxf ,float v )
 {
-  if(minf>maxf) { ColorRamp(maxf,minf,maxf+(minf-v)); return; }
+  if(minf>maxf) { SetColorRamp(maxf,minf,maxf+(minf-v)); return; }
 	if(v <  minf ) { *this=Color4<T>(Color4<T>::Red); return; }
   //the case v > maxf is handled automatically at the end of the function
 

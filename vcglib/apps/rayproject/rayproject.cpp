@@ -205,11 +205,11 @@ int main(int argc,char ** argv){
   mf.SetMesh( &mesh );
   vcg::RayTriangleIntersectionFunctor<true> FintFunct;
   vcg::face::PointDistanceBaseFunctor<float> PDistFunct;
-  tri::UpdateFlags<MyMesh>::FaceProjection(mesh);
+  //vcg::tri::UpdateFlags<MyMesh>::FaceProjection(mesh);
   TriMeshGrid static_grid;
   printf("preprocessing mesh with %d faces\n", mesh.fn);
   static_grid.Set(mesh.face.begin(), mesh.face.end());
-  tri::UpdateFlags<MyMesh>::FaceProjection(mesh);
+  //tri::UpdateFlags<MyMesh>::FaceProjection(mesh);
   
   //--------------------------------------------------------------------------------------//
   //

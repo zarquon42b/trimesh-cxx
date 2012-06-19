@@ -118,12 +118,13 @@ typedef	typename MeshType::ScalarType			ScalarType;
 typedef typename MeshType::VertexType     VertexType;
 typedef typename MeshType::VertexPointer  VertexPointer;
 typedef typename MeshType::VertexIterator VertexIterator;
+typedef typename MeshType::EdgeIterator   EdgeIterator;
 typedef typename MeshType::FaceType       FaceType;
 typedef typename MeshType::FacePointer    FacePointer;
 typedef typename MeshType::FaceIterator   FaceIterator;
 typedef typename vcg::Box3<ScalarType>  Box3Type;
 
-static size_t AllVertex(MeshType &m)
+static size_t VertexAll(MeshType &m)
 {
 	VertexIterator vi;
 	for(vi = m.vert.begin(); vi != m.vert.end(); ++vi)
@@ -131,15 +132,22 @@ static size_t AllVertex(MeshType &m)
   return m.vn;
 }
   
-static size_t AllFace(MeshType &m)
+static size_t EdgeAll(MeshType &m)
+{
+	EdgeIterator ei;
+	for(ei = m.edge.begin(); ei != m.edge.end(); ++ei)
+	if( !(*ei).IsD() )	(*ei).SetS();
+  return m.fn;
+}
+static size_t FaceAll(MeshType &m)
 {
 	FaceIterator fi;
 	for(fi = m.face.begin(); fi != m.face.end(); ++fi)
-    if( !(*fi).IsD() )	(*fi).SetS();
-  return m.fn;  
+	if( !(*fi).IsD() )	(*fi).SetS();
+  return m.fn;
 }
 
-static size_t ClearVertex(MeshType &m)
+static size_t VertexClear(MeshType &m)
 {
 	VertexIterator vi;
 	for(vi = m.vert.begin(); vi != m.vert.end(); ++vi)
@@ -147,7 +155,15 @@ static size_t ClearVertex(MeshType &m)
   return 0;
 }
 
-static size_t ClearFace(MeshType &m)
+static size_t EdgeClear(MeshType &m)
+{
+	EdgeIterator ei;
+	for(ei = m.edge.begin(); ei != m.edge.end(); ++ei)
+		if( !(*ei).IsD() )	(*ei).ClearS();
+  return 0;
+}
+
+static size_t FaceClear(MeshType &m)
 {
 	FaceIterator fi;
 	for(fi = m.face.begin(); fi != m.face.end(); ++fi)
@@ -157,11 +173,12 @@ static size_t ClearFace(MeshType &m)
 
 static void Clear(MeshType &m)
 {
-  ClearVertex(m);
-  ClearFace(m);
+  VertexClear(m);
+  EdgeClear(m);
+  FaceClear(m);
 }
 
-static size_t CountFace(MeshType &m)
+static size_t FaceCount(MeshType &m)
 {
   size_t selCnt=0;
 	FaceIterator fi;
@@ -170,7 +187,16 @@ static size_t CountFace(MeshType &m)
   return selCnt;
 }
 
-static size_t CountVertex(MeshType &m)
+static size_t EdgeCount(MeshType &m)
+{
+  size_t selCnt=0;
+  EdgeIterator ei;
+  for(ei=m.edge.begin();ei!=m.edge.end();++ei)
+    if(!(*ei).IsD() && (*ei).IsS()) ++selCnt;
+  return selCnt;
+}
+
+static size_t VertexCount(MeshType &m)
 {
   size_t selCnt=0;
 	VertexIterator vi;
@@ -179,7 +205,7 @@ static size_t CountVertex(MeshType &m)
   return selCnt;
 }
 
-static size_t InvertFace(MeshType &m)
+static size_t FaceInvert(MeshType &m)
 {
   size_t selCnt=0;
 	FaceIterator fi;
@@ -195,7 +221,7 @@ static size_t InvertFace(MeshType &m)
   return selCnt;
 } 
 
-static size_t InvertVertex(MeshType &m)
+static size_t VertexInvert(MeshType &m)
 {
   size_t selCnt=0;
 	VertexIterator vi;
@@ -212,17 +238,32 @@ static size_t InvertVertex(MeshType &m)
 } 
 
 /// \brief Select all the vertices that are touched by at least a single selected faces
-static size_t VertexFromFaceLoose(MeshType &m)
+static size_t VertexFromFaceLoose(MeshType &m, bool preserveSelection=false)
 {
   size_t selCnt=0;
-	ClearVertex(m);
-  FaceIterator fi;
-	for(fi = m.face.begin(); fi != m.face.end(); ++fi)
-		if( !(*fi).IsD() && (*fi).IsS())	
+
+  if(!preserveSelection) VertexClear(m);
+  for(FaceIterator fi = m.face.begin(); fi != m.face.end(); ++fi)
+    if( !(*fi).IsD() && (*fi).IsS())
     {
       if( !(*fi).V(0)->IsS()) { (*fi).V(0)->SetS(); ++selCnt; }
       if( !(*fi).V(1)->IsS()) { (*fi).V(1)->SetS(); ++selCnt; }
       if( !(*fi).V(2)->IsS()) { (*fi).V(2)->SetS(); ++selCnt; }
+    }
+  return selCnt;
+}
+
+/// \brief Select all the vertices that are touched by at least a single selected edge
+static size_t VertexFromEdgeLoose(MeshType &m, bool preserveSelection=false)
+{
+  size_t selCnt=0;
+
+  if(!preserveSelection) VertexClear(m);
+  for(EdgeIterator ei = m.edge.begin(); ei != m.edge.end(); ++ei)
+    if( !(*ei).IsD() && (*ei).IsS())
+    {
+      if( !(*ei).V(0)->IsS()) { (*ei).V(0)->SetS(); ++selCnt; }
+      if( !(*ei).V(1)->IsS()) { (*ei).V(1)->SetS(); ++selCnt; }
     }
   return selCnt;
 }
@@ -233,23 +274,23 @@ static size_t VertexFromFaceLoose(MeshType &m)
 */
 static size_t VertexFromFaceStrict(MeshType &m)
 {
-	VertexFromFaceLoose(m);
+  VertexFromFaceLoose(m);
   FaceIterator fi;
-	for(fi = m.face.begin(); fi != m.face.end(); ++fi)
-		if( !(*fi).IsD() && !(*fi).IsS())	
+  for(fi = m.face.begin(); fi != m.face.end(); ++fi)
+    if( !(*fi).IsD() && !(*fi).IsS())
     {
-     (*fi).V(0)->ClearS(); 
-     (*fi).V(1)->ClearS(); 
-     (*fi).V(2)->ClearS(); 
+      (*fi).V(0)->ClearS();
+      (*fi).V(1)->ClearS();
+      (*fi).V(2)->ClearS();
     }
-  return CountVertex(m);
+  return VertexCount(m);
 }
 
 /// \brief Select ONLY the faces with ALL the vertices selected 
 static size_t FaceFromVertexStrict(MeshType &m)
 {
   size_t selCnt=0;
-	ClearFace(m);
+    FaceClear(m);
   FaceIterator fi;
 	for(fi = m.face.begin(); fi != m.face.end(); ++fi)
 		if( !(*fi).IsD())	
@@ -267,7 +308,7 @@ static size_t FaceFromVertexStrict(MeshType &m)
 static size_t FaceFromVertexLoose(MeshType &m)
 {
   size_t selCnt=0;
-	ClearFace(m);
+    FaceClear(m);
   FaceIterator fi;
 	for(fi = m.face.begin(); fi != m.face.end(); ++fi)
 		if( !(*fi).IsD() && !(*fi).IsS())	
@@ -284,7 +325,7 @@ static size_t FaceFromVertexLoose(MeshType &m)
 static size_t VertexFromBorderFlag(MeshType &m)
 {
   size_t selCnt=0;
-  ClearVertex(m);
+  VertexClear(m);
   VertexIterator vi;
   for(vi = m.vert.begin(); vi != m.vert.end(); ++vi)
     if( !(*vi).IsD() )
@@ -302,7 +343,7 @@ static size_t VertexFromBorderFlag(MeshType &m)
 static size_t FaceFromBorderFlag(MeshType &m)
 {
   size_t selCnt=0;
-	ClearFace(m);
+    FaceClear(m);
   FaceIterator fi;
 	for(fi = m.face.begin(); fi != m.face.end(); ++fi)
 		if( !(*fi).IsD() )	
@@ -377,7 +418,7 @@ static size_t FaceConnectedFF(MeshType &m)
 static size_t FaceFromQualityRange(MeshType &m,float minq, float maxq)
 {
   size_t selCnt=0;
-  ClearFace(m);
+  FaceClear(m);
   FaceIterator fi;
   assert(HasPerFaceQuality(m));
   for(fi=m.face.begin();fi!=m.face.end();++fi)
@@ -396,7 +437,7 @@ static size_t FaceFromQualityRange(MeshType &m,float minq, float maxq)
 static size_t VertexFromQualityRange(MeshType &m,float minq, float maxq)
 {
   size_t selCnt=0;
-	ClearVertex(m);
+    VertexClear(m);
 	VertexIterator vi;
 	assert(HasPerVertexQuality(m));
   for(vi=m.vert.begin();vi!=m.vert.end();++vi)

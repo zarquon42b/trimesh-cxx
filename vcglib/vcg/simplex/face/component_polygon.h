@@ -38,28 +38,6 @@ All the Components that can be added to a vertex should be defined in the namesp
 */
 
 /*-------------------------- PolInfo -------------------------------------------*/
-template <class T> class EmptyPolyInfo: public T {
-protected:
-	inline void SetVN(const int & n) {assert(0);}
-public:
-	typedef typename T::HEdgeType HEdgeType;
-	typedef typename T::HEdgePointer HEdgePointer;
-
-	/* Note: the destructor will not be called in general because there are no virtual destructors.
-		Instead, the job of deallocating the memory will be done bu the edge allocator.
-		This destructor is only done for those who istance a face alone (outside a mesh)
-	*/
-		static bool HasPolyInfo()   { return false; }
-		inline void Alloc(const int & ns){T::Alloc(ns);};// it should be useless
-		inline void Dealloc(){T::Dealloc();};// it should be useless
-
-		// EmptyPFHAdj
-		HEdgePointer       &FHp( )       { static typename T::HEdgePointer fp=0;  assert(0); return fp; }
-		HEdgePointer const cFHp( ) const { static typename T::HEdgePointer const fp=0; return fp; }
-		static bool HasFHAdjacency()   {   return false; }
-};
-
-
 
 
 template <class T> class PolyInfo: public T {
@@ -75,8 +53,8 @@ public:
 		inline const int &  VN() const { return _ns;}
 		inline int Prev(const int & i){ return (i+(VN()-1))%VN();}
 		inline int Next(const int & i){ return (i+1)%VN();}
-		inline void Alloc(const int & ns){};
-		inline void Dealloc(){};
+    inline void Alloc(const int & /*ns*/){}
+    inline void Dealloc(){}
 
 		// EmptyPFHAdj
 		typename T::HEdgePointer       &FHp(const int & )       { static typename T::HEdgePointer fp=0;  assert(0); return fp; }
@@ -92,17 +70,17 @@ public:
 	typedef typename T::VertexType::CoordType CoordType;
 	typedef typename T::VertexType::ScalarType ScalarType;
 // typedef typename T::CoordType CoordType;
-  inline typename T::VertexType *       & V( const int j ) 	    {	assert(0);		static typename T::VertexType *vp=0; return vp; }
-  inline typename T::VertexType * const & V( const int j ) const {	assert(0);		static typename T::VertexType *vp=0; return vp; }
-        inline typename T::VertexType * cV( const int j ) const {	assert(0);		static typename T::VertexType *vp=0; return vp;	}
-	inline       typename T::CoordType & P( const int j ) 	    {	assert(0);		static typename T::CoordType coord(0, 0, 0); return coord;	}
-	inline const typename T::CoordType & P( const int j ) const {	assert(0);		static typename T::CoordType coord(0, 0, 0); return coord;	}
-	inline const typename T::CoordType &cP( const int j ) const	{	assert(0);		static typename T::CoordType coord(0, 0, 0); return coord;	}
+  inline typename T::VertexType *       & V( const int /*j*/ ) 	    {	assert(0);		static typename T::VertexType *vp=0; return vp; }
+  inline typename T::VertexType * const & V( const int /*j*/ ) const {	assert(0);		static typename T::VertexType *vp=0; return vp; }
+        inline typename T::VertexType * cV( const int /*j*/ ) const {	assert(0);		static typename T::VertexType *vp=0; return vp;	}
+  inline       typename T::CoordType & P( const int /*j*/ ) 	    {	assert(0);		static typename T::CoordType coord(0, 0, 0); return coord;	}
+  inline const typename T::CoordType & P( const int /*j*/ ) const {	assert(0);		static typename T::CoordType coord(0, 0, 0); return coord;	}
+  inline const typename T::CoordType &cP( const int /*j*/ ) const	{	assert(0);		static typename T::CoordType coord(0, 0, 0); return coord;	}
 	template <class LeftF>
 	void ImportData(const LeftF & leftF) {T::ImportData(leftF);}
   	static bool HasFVAdjN()   { return false; }
 	static void Name(std::vector<std::string> & name){T::Name(name);}
-	inline void Alloc(const int & ns){T::Alloc();};
+  inline void Alloc(const int & /*ns*/){T::Alloc();}
 	inline void Dealloc(){T::Dealloc();}
 
 };
@@ -176,13 +154,13 @@ public:
  typedef typename T::VertexType VertexType;
 	typedef int VFAdjType;
   typename T::FacePointer       &VFp(const int)       { static typename T::FacePointer fp=0;  assert(0); return fp; }
-  typename T::FacePointer const cVFp(const int) const { static typename T::FacePointer const fp=0; return fp; }
+  typename T::FacePointer       cVFp(const int) const { return 0; }
   typename T::FacePointer       &FFp(const int)       { static typename T::FacePointer fp=0;  assert(0); return fp; }
-  typename T::FacePointer const cFFp(const int) const { static typename T::FacePointer const fp=0; return fp; }
-  char &VFi(const int j){static char z=0;  assert(0); return z;};
-  char &FFi(const int j){static char z=0;  assert(0); return z;};
-  const char &cVFi(const int j){static char z=0; return z;};
-  const char &cFFi(const int j) const {static char z=0; return z;};
+  typename T::FacePointer       cFFp(const int) const { return 0; }
+  char &VFi(const int /*j*/){static char z=0;  assert(0); return z;}
+  char &FFi(const int /*j*/){static char z=0;  assert(0); return z;}
+  char cVFi(const int /*j*/) const { return 0;}
+  char cFFi(const int /*j*/) const { return 0;}
   unsigned int SizeNeigh(){assert(0); return 0;}
 
 	template <class LeftF>
@@ -218,7 +196,7 @@ public:
 			this->SetVN(ns);
 			_vfpP = new  FaceType*[this->VN()]; 
 			_vfiP = new  char[this->VN()];
-			for(int i = 0; i < this->VN(); ++i) {_vfpP[i] = 0;_vfiP = -1;}
+      for(int i = 0; i < this->VN(); ++i) {_vfpP[i] = 0;_vfiP[i] = -1;}
 		}
 		T::Alloc(ns);
 													

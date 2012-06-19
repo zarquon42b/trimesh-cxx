@@ -189,7 +189,7 @@ The function allows to retrieve for each vertex the list of faces sharing this v
 
 static void VertexFace(MeshType &m)
 {
-  if(!m.HasVFTopology()) return;		
+  assert(tri::HasPerVertexVFAdjacency(m) && tri::HasPerFaceVFAdjacency(m) );
 
 	VertexIterator vi;
 	FaceIterator fi;
@@ -344,7 +344,7 @@ static void TestVertexFace(MeshType &m)
 {
 	SimpleTempData<typename MeshType::VertContainer, int > numVertex(m.vert,0);
 
-	if(!m.HasVFTopology()) return;		
+  assert(tri::HasVEAdjacency(m));
 	
 	FaceIterator fi;
 	for(fi=m.face.begin();fi!=m.face.end();++fi)
@@ -387,7 +387,7 @@ static void TestVertexFace(MeshType &m)
 /// \brief Test correctness of FFtopology (only for 2Manifold Meshes!)
 static void TestFaceFace(MeshType &m)
 {
-	if(!m.HasFFTopology()) return;		
+  assert(HasFFAdjacency(m));
 
   for(FaceIterator fi=m.face.begin();fi!=m.face.end();++fi)
 	{
@@ -447,7 +447,7 @@ inline bool operator !=  ( const PVertexEdge & pe ) const { return ( v!=pe.v ); 
 
 static void EdgeEdge(MeshType &m)
 {
-  if(!HasEEAdjacency(m)) return;
+  assert(HasEEAdjacency(m));
 
   std::vector<PVertexEdge> v;
   if( m.en == 0 ) return;
@@ -467,10 +467,12 @@ static void EdgeEdge(MeshType &m)
   int ne = 0;											// Numero di edge reali
 
   typename std::vector<PVertexEdge>::iterator pe,ps;
-  for(ps = v.begin(),pe=v.begin();pe<=v.end();++pe)	// Scansione vettore ausiliario
+  // for(ps = v.begin(),pe=v.begin();pe<=v.end();++pe)	// Scansione vettore ausiliario
+  ps = v.begin();pe=v.begin();
+  do
   {
 //    printf("v %i -> e %i\n",tri::Index(m,(*ps).v),tri::Index(m,(*ps).e));
-    if( pe==v.end() || *pe != *ps )					// Trovo blocco di edge uguali
+    if( pe==v.end() || !(*pe == *ps) )					// Trovo blocco di edge uguali
     {
       typename std::vector<PVertexEdge>::iterator q,q_next;
       for (q=ps;q<pe-1;++q)						// Scansione edge associati
@@ -491,12 +493,14 @@ static void EdgeEdge(MeshType &m)
       ps = pe;
       ++ne;										// Aggiorno il numero di edge
     }
-  }
+    if(pe==v.end()) break;
+    ++pe;
+   } while(true);
 }
 
 static void VertexEdge(MeshType &m)
 {
-  if(!m.HasVETopology()) return;
+  assert(HasVEAdjacency(m));
 
   VertexIterator vi;
   EdgeIterator ei;
@@ -507,7 +511,7 @@ static void VertexEdge(MeshType &m)
     (*vi).VEi() = 0;
   }
 
-  for(ei=m.edges.begin();ei!=m.edges.end();++ei)
+  for(ei=m.edge.begin();ei!=m.edge.end();++ei)
   if( ! (*ei).IsD() )
   {
     for(int j=0;j<2;++j)

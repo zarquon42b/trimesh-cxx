@@ -157,7 +157,7 @@ protected:
 	}
 
     ///remove all the objects in a cell
-    void RemoveCell(const Point3i &cell)
+    void RemoveCell(const Point3i &/*cell*/)
     {
     }
 
@@ -185,7 +185,7 @@ protected:
 			Box3<ScalarType> b;
 			s->GetBBox(b);
 			vcg::Box3i bb;
-			BoxToIBox(b,bb);
+      this->BoxToIBox(b,bb);
 			//then insert all the cell of bb
 			for (int i=bb.min.X();i<=bb.max.X();i++)
 				for (int j=bb.min.Y();j<=bb.max.Y();j++)
@@ -210,7 +210,7 @@ protected:
         {
             Box3x b(p-Point3f(radius,radius,radius),p+Point3f(radius,radius,radius));
             vcg::Box3i bb;
-            BoxToIBox(b,bb);
+            this->BoxToIBox(b,bb);
             ScalarType r2=radius*radius;
             int cnt=0;
             std::vector<HashIterator> toDel;
@@ -240,7 +240,7 @@ protected:
         {
             Box3x b(p-Point3f(radius,radius,radius),p+Point3f(radius,radius,radius));
             vcg::Box3i bb;
-            BoxToIBox(b,bb);
+            this->BoxToIBox(b,bb);
             int cnt=0;
             std::vector<HashIterator> toDel;
 

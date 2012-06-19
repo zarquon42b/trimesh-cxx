@@ -79,7 +79,7 @@ static const char *ErrorMsg(int error)
   else return stl_error_msg[error];
 };
 
-static bool LoadMask(const char * filename, int &mask)
+static bool LoadMask(const char * /*filename*/, int &mask)
 {
   mask = Mask::IOM_VERTCOORD | Mask::IOM_FACEINDEX;
   return true;

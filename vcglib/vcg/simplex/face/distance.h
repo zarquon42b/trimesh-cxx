@@ -105,7 +105,7 @@ namespace vcg {
                 //const ScalarType EPSILON = 0.00000001;
 		ScalarType b,b0,b1,b2;
 			// Calcolo distanza punto piano
-		ScalarType d = Distance( f.cPlane(), q );
+		ScalarType d = SignedDistancePlanePoint( f.cPlane(), q );
 		if( d>dist || d<-dist )			// Risultato peggiore: niente di fatto
 			return false;
 
@@ -301,9 +301,8 @@ namespace vcg {
 		
 		/// BASIC VERSION of the Point-face distance that does not require the EdgePlane Additional data.
 		/// Given a face and a point, returns the closest point of the face to p.
-		/// it assumes that the face has Normalized Normal and on the flags stored the preferred orientation.
+		/// it assumes that the face has Normalized Normal.
 		// UpdateNormals::PerFaceNormalized(m)
-		// UpdateFlags<>::FaceProjection(m);
 		
 		template <class FaceType>
 			bool PointDistanceBase(
@@ -320,29 +319,33 @@ namespace vcg {
             assert((f.cN().SquaredNorm() ==0) || (f.cN().SquaredNorm() > 0.9999 && f.cN().SquaredNorm()<1.0001)); // if you get this assert you have forgot to make a UpdateNormals::PerFaceNormalized(m)
         #endif
 
-        if(f.cN()==Point3<ScalarType>(0,0,0)) // to correctly manage the case of degenerate triangles we consider them as segments.
-        {
-            Box3<ScalarType> bb;
-            f.GetBBox(bb);
-            Segment3<ScalarType> degenTri(bb.min,bb.max);
-            //Point3<ScalarType> closest= ClosestPoint( degenTri, q );
-						//ScalarType d = Distance(closest, q);
-						Point3<ScalarType> closest;
-            ScalarType d;
-						vcg::SegmentPointDistance<ScalarType>(degenTri,q,closest,d);
-            if( d>dist || d<-dist )			// Risultato peggiore: niente di fatto
-                      return false;
-            dist=d;
-            p=closest;
-            return true;
-        }
+                if(f.cN()==Point3<ScalarType>(0,0,0)) // to correctly manage the case of degenerate triangles we consider them as segments.
+                {
+                  Box3<ScalarType> bb;
+                  f.GetBBox(bb);
+                  Segment3<ScalarType> degenTri(bb.min,bb.max);
+                  Point3<ScalarType> closest;
+                  ScalarType d;
+                  if(bb.Diag()>0)
+                    vcg::SegmentPointDistance<ScalarType>(degenTri,q,closest,d);
+                  else // very degenerate triangle (just a point)
+                  {
+                    closest = bb.min;
+                    d=Distance(q,closest);
+                  }
+                  if( d>dist) return false;
+                  dist=d;
+                  p=closest;
+                  assert(!math::IsNAN(dist));
+                  return true;
+                }
 
 				Plane3<ScalarType> fPlane;
 				fPlane.Init(f.cP(0),f.cN());
         const ScalarType EPS = ScalarType( 0.000001);
 				ScalarType b,b0,b1,b2;
 				// Calcolo distanza punto piano
-				ScalarType d = Distance( fPlane, q );
+				ScalarType d = SignedDistancePlanePoint( fPlane, q );
 				if( d>dist || d<-dist )			// Risultato peggiore: niente di fatto
 					return false;
 				
@@ -368,16 +371,25 @@ namespace vcg {
 				f.Edge(0)*=d; f.Edge(1)*=d;f.Edge(2)*=d;
 				 
 				So we must apply the same scaling according to the plane orientation, eg in the case of NORMX
-				
-				scaleFactor= 1/fPlane.Direction()[0];
-				fEdge[0]*=d; fEdge[1]*=d;fEdge[2]*=d;
+				  scaleFactor= 1/fPlane.Direction()[0];
+				  fEdge[0]*=d; fEdge[1]*=d;fEdge[2]*=d;
 				*/
-				
+
+				int bestAxis;
+				if(fabs(f.cN()[0])>fabs(f.cN()[1]))
+				{
+				  if(fabs(f.cN()[0])>fabs(f.cN()[2])) bestAxis = 0;
+				  else bestAxis = 2;
+				} else {
+				  if(fabs(f.cN()[1])>fabs(f.cN()[2])) bestAxis=1; /* 1 > 0 ? 2 */
+				  else bestAxis=2; /* 2 > 1 ? 2 */
+				}
+
 				ScalarType scaleFactor;
 
-				switch( f.Flags() & (FaceType::NORMX|FaceType::NORMY|FaceType::NORMZ) )
+				switch( bestAxis )
 				{
-					case FaceType::NORMX:
+					case 0:  /************* X AXIS **************/
 						scaleFactor= 1/fPlane.Direction()[0];
 						fEdge[0]*=scaleFactor; fEdge[1]*=scaleFactor; fEdge[2]*=scaleFactor;
 						
@@ -421,7 +433,7 @@ namespace vcg {
 							}
 							break;
 						
-					case FaceType::NORMY:
+					case 1:  /************* Y AXIS **************/
 						scaleFactor= 1/fPlane.Direction()[1];
 						fEdge[0]*=scaleFactor; fEdge[1]*=scaleFactor; fEdge[2]*=scaleFactor;
 						
@@ -458,7 +470,7 @@ namespace vcg {
 							}
 							break;
 						
-					case FaceType::NORMZ:
+					case 2:  /************* Z AXIS **************/
 						scaleFactor= 1/fPlane.Direction()[2];
 						fEdge[0]*=scaleFactor; fEdge[1]*=scaleFactor; fEdge[2]*=scaleFactor;
 						

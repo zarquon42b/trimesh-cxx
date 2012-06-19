@@ -129,7 +129,7 @@ namespace tri{
       static math::Quadric<double> &Qd(VERTEX_TYPE *v) {return v->Qd();}
       static typename VERTEX_TYPE::ScalarType W(VERTEX_TYPE */*v*/) {return 1.0;}
       static typename VERTEX_TYPE::ScalarType W(VERTEX_TYPE &/*v*/) {return 1.0;}
-      static void Merge(VERTEX_TYPE & v_dest, VERTEX_TYPE const & v_del){}
+      static void Merge(VERTEX_TYPE & /*v_dest*/, VERTEX_TYPE const & /*v_del*/){}
 		};
 
 
@@ -207,6 +207,8 @@ public:
 		static std::vector<typename TriMeshType::VertexPointer>  & WV(){
       static std::vector<typename TriMeshType::VertexPointer> _WV; return _WV;
     }; 
+
+	inline TriEdgeCollapseQuadric(){}
 
     inline TriEdgeCollapseQuadric(const VertexPair &p, int i, BaseParameterClass *pp)
 		{

@@ -23,6 +23,7 @@
 #ifndef __VCGLIB_IMPORTERPLY
 #define __VCGLIB_IMPORTERPLY
 
+#include <stddef.h>
 #include<wrap/callback.h>
 #include<wrap/ply/plylib.h>
 #include<wrap/io_trimesh/io_mask.h>
@@ -62,6 +63,7 @@ typedef typename OpenMeshType::VertexType VertexType;
 typedef typename OpenMeshType::FaceType FaceType;
 typedef typename OpenMeshType::VertexIterator VertexIterator;
 typedef typename OpenMeshType::FaceIterator FaceIterator;
+  typedef typename OpenMeshType::EdgeIterator EdgeIterator;
 
 //template <class T> int PlyType () {	assert(0);  return 0;}
 
@@ -93,6 +95,11 @@ struct LoadPly_TristripAux
 	unsigned char data[MAX_USER_DATA];  
 };
 
+struct LoadPly_EdgeAux
+{
+	int v1,v2;
+	unsigned char data[MAX_USER_DATA];
+};
 
 // Yet another auxiliary data structure for loading some strange ply files 
 // the original stanford range data...
@@ -227,6 +234,16 @@ static const  PropDescriptor &TristripDesc(int i)
 	return qf[i];
 }
 
+static const  PropDescriptor &EdgeDesc(int i)
+{
+	static const 	PropDescriptor qf[2]=
+	{
+		{"edge","vertex1", ply::T_INT,  ply::T_INT,  offsetof(LoadPly_EdgeAux,v1),		  0,0,0,0,0  ,0},
+		{"edge","vertex2", ply::T_INT,  ply::T_INT,  offsetof(LoadPly_EdgeAux,v2),		  0,0,0,0,0  ,0},
+	};
+	return qf[i];
+}
+
 // Descriptor for the Stanford Data Repository Range Maps.
 // In practice a grid with some invalid elements. Coords are saved only for good elements
 static const  PropDescriptor &RangeDesc(int i)  
@@ -278,7 +295,7 @@ static const char *ErrorMsg(int error)
     ply_error_msg[ply::E_NOERROR				]="No errors";
 	  ply_error_msg[ply::E_CANTOPEN				]="Can't open file";
     ply_error_msg[ply::E_NOTHEADER ]="Header not found";
-	  ply_error_msg[ply::E_UNESPECTEDEOF	]="Eof in header";
+      ply_error_msg[ply::E_UNESPECTEDEOF	]="Eof in header";
 	  ply_error_msg[ply::E_NOFORMAT				]="Format not found";
 	  ply_error_msg[ply::E_SYNTAX				]="Syntax error on header";
 	  ply_error_msg[ply::E_PROPOUTOFELEMENT]="Property without element";
@@ -294,6 +311,7 @@ static const char *ErrorMsg(int error)
 	  ply_error_msg[PlyInfo::E_SHORTFILE      ]="Unespected eof";
 	  ply_error_msg[PlyInfo::E_NO_3VERTINFACE ]="Face with more than 3 vertices";
 	  ply_error_msg[PlyInfo::E_BAD_VERT_INDEX ]="Bad vertex index in face";
+	  ply_error_msg[PlyInfo::E_BAD_VERT_INDEX_EDGE ]="Bad vertex index in edge";
 	  ply_error_msg[PlyInfo::E_NO_6TCOORD     ]="Face with no 6 texture coordinates";
 	  ply_error_msg[PlyInfo::E_DIFFER_COLORS  ]="Number of color differ from vertices";
   }
@@ -338,6 +356,7 @@ static int Open( OpenMeshType &m, const char * filename, PlyInfo &pi )
   assert(filename!=0);
 	std::vector<VertexPointer> index;
 	LoadPly_FaceAux fa;
+	LoadPly_EdgeAux ea;
 	LoadPly_TristripAux tsa;
 	LoadPly_VertAux<ScalarType> va;
   
@@ -415,11 +434,13 @@ static int Open( OpenMeshType &m, const char * filename, PlyInfo &pi )
 									
 			}
 		// Descrittori facoltativi dei flags
-	
-  if(VertexType::HasFlags() && pf.AddToRead(VertDesc(3))!=-1 ) 
-			pi.mask |= Mask::IOM_VERTFLAGS;
+  if(pf.AddToRead(EdgeDesc(0) )!= -1 && pf.AddToRead(EdgeDesc(1)) != -1 )
+                  pi.mask |= Mask::IOM_EDGEINDEX;
 
-	 if( VertexType::HasNormal() )
+  if(vcg::tri::HasPerVertexFlags(m) && pf.AddToRead(VertDesc(3))!=-1 )
+            pi.mask |= Mask::IOM_VERTFLAGS;
+
+	 if( vcg::tri::HasPerVertexNormal(m) )
 	 {
      if(		pf.AddToRead(VertDesc(12))!=-1  && pf.AddToRead(VertDesc(13))!=-1  && pf.AddToRead(VertDesc(14))!=-1 )
 			 pi.mask |= Mask::IOM_VERTNORMAL;
@@ -429,14 +450,14 @@ static int Open( OpenMeshType &m, const char * filename, PlyInfo &pi )
 
 	 }
 	 
-  if( VertexType::HasQuality() )
+  if( vcg::tri::HasPerVertexQuality(m) )
 	{
 		if( pf.AddToRead(VertDesc(4))!=-1 ||
 		    pf.AddToRead(VertDesc(11))!=-1 )
 			pi.mask |= Mask::IOM_VERTQUALITY;
 	}
 
-	if( VertexType::HasColor() )
+	if(vcg::tri::HasPerVertexColor(m) )
 	{
 		if( pf.AddToRead(VertDesc(5))!=-1 )
 		{
@@ -479,13 +500,13 @@ static int Open( OpenMeshType &m, const char * filename, PlyInfo &pi )
 	if( pf.AddToRead(FaceDesc(1))!=-1 )
 		pi.mask |= Mask::IOM_FACEFLAGS;
 
-  if( FaceType::HasFaceQuality())
+  if( vcg::tri::HasPerFaceQuality(m) )
 	{
 		if( pf.AddToRead(FaceDesc(2))!=-1 )
 			pi.mask |= Mask::IOM_FACEQUALITY;
 	}
 
-	if( FaceType::HasFaceColor() )
+	if( vcg::tri::HasPerFaceColor(m)  )
 	{
 		if( pf.AddToRead(FaceDesc(6))!=-1 )
 		{
@@ -496,7 +517,7 @@ static int Open( OpenMeshType &m, const char * filename, PlyInfo &pi )
 	}
 
 
-	if( FaceType::HasWedgeTexCoord() )
+	if( vcg::tri::HasPerWedgeTexCoord(m) )
 	{
 		if( pf.AddToRead(FaceDesc(3))!=-1 )
 		{
@@ -508,7 +529,7 @@ static int Open( OpenMeshType &m, const char * filename, PlyInfo &pi )
 		}
 	}
 
-  if( FaceType::HasWedgeColor() || FaceType::HasFaceColor() || VertexType::HasColor())
+  if( vcg::tri::HasPerFaceColor(m) || vcg::tri::HasPerVertexColor(m) || vcg::tri::HasPerWedgeColor(m) )
 	{
 		if( pf.AddToRead(FaceDesc(4))!=-1 )
 		{
@@ -630,7 +651,7 @@ static int Open( OpenMeshType &m, const char * filename, PlyInfo &pi )
 				(*vi).P()[1] = va.p[1];
 				(*vi).P()[2] = va.p[2];
 
-				if( m.HasPerVertexFlags() &&  (pi.mask & Mask::IOM_VERTFLAGS) )
+				if( HasPerVertexFlags(m) &&  (pi.mask & Mask::IOM_VERTFLAGS) )
 					(*vi).UberFlags() = va.flags;
 
 				if( pi.mask & Mask::IOM_VERTQUALITY )
@@ -676,7 +697,30 @@ static int Open( OpenMeshType &m, const char * filename, PlyInfo &pi )
 			for(j=0,vi=m.vert.begin();j<n;++j,++vi)
 				index[j] = &*vi;
 		}
-		else if( !strcmp( pf.ElemName(i),"face") && (n>0) )/************************************************************/
+		else if( !strcmp( pf.ElemName(i),"edge") && (n>0) )/******************** EDGE READING *******************************/
+		{
+		  assert( pi.mask & Mask::IOM_EDGEINDEX );
+		  EdgeIterator ei=Allocator<OpenMeshType>::AddEdges(m,n);
+		  pf.SetCurElement(i);
+		  for(int j=0;j<n;++j)
+		  {
+			  if(pi.cb && (j%1000)==0) pi.cb(50+j*50/n,"Edge Loading");
+			  if( pf.Read(&ea)==-1 )
+			  {
+				  pi.status = PlyInfo::E_SHORTFILE;
+				  return pi.status;
+			  }
+			  if( ea.v1<0 || ea.v2<0 || ea.v1>=m.vn || ea.v2>=m.vn)
+			  {
+				  pi.status = PlyInfo::E_BAD_VERT_INDEX_EDGE;
+				  return pi.status;
+			  }
+			  (*ei).V(0) = index[ ea.v1 ];
+			  (*ei).V(1) = index[ ea.v2 ];
+			  ++ei;
+		  }
+		}
+		else if( !strcmp( pf.ElemName(i),"face") && (n>0) )/******************** FACE READING ****************************************/
 		{
 			int j;
 			
@@ -702,9 +746,9 @@ static int Open( OpenMeshType &m, const char * filename, PlyInfo &pi )
           }
 				}
 				
-				if(m.HasPolyInfo()) (*fi).Alloc(3);
+				if(HasPolyInfo(m)) (*fi).Alloc(3);
 
-				if(m.HasPerFaceFlags() &&( pi.mask & Mask::IOM_FACEFLAGS) )
+				if(HasPerFaceFlags(m) &&( pi.mask & Mask::IOM_FACEFLAGS) )
 				{
 					(*fi).UberFlags() = fa.flags;
 				}
@@ -810,12 +854,6 @@ static int Open( OpenMeshType &m, const char * filename, PlyInfo &pi )
       }
 		}else if( !strcmp( pf.ElemName(i),"tristrips") )//////////////////// LETTURA TRISTRIP DI STANFORD
 		{ 
-			// Warning the parsing of tristrips could not work if OCF types are used
-			FaceType tf;  
-			if( HasPerFaceQuality(m) )  tf.Q()=(typename OpenMeshType::FaceType::QualityType)1.0;
-			if( FaceType::HasWedgeColor() )   tf.WC(0)=tf.WC(1)=tf.WC(2)=Color4b(Color4b::White);
-			if( HasPerFaceColor(m) )    tf.C()=Color4b(Color4b::White);			
-
 			int j;
 			pf.SetCurElement(i);
 			int numvert_tmp = (int)m.vert.size();
@@ -829,26 +867,26 @@ static int Open( OpenMeshType &m, const char * filename, PlyInfo &pi )
 					return pi.status;
 				}
 				int remainder=0;
-				//int startface=m.face.size();
 				for(k=0;k<tsa.size-2;++k)
 				{
 					if(pi.cb && (k%1000)==0) pi.cb(50+k*50/tsa.size,"Tristrip Face Loading");				
-          if(tsa.v[k]<0 || tsa.v[k]>=numvert_tmp )	{
+					if(tsa.v[k]<0 || tsa.v[k]>=numvert_tmp )	{
 						pi.status = PlyInfo::E_BAD_VERT_INDEX;
 						return pi.status;
 					}
-				  if(tsa.v[k+2]==-1)
+					if(tsa.v[k+2]==-1)
 					{
 						k+=2;
 						if(k%2) remainder=0;
 							 else remainder=1;
 						continue;
 					}
+					Allocator<OpenMeshType>::AddFaces(m,1);
+					FaceType &tf =m.face.back();
 					tf.V(0) = index[ tsa.v[k+0] ];
 					tf.V(1) = index[ tsa.v[k+1] ];
 					tf.V(2) = index[ tsa.v[k+2] ];
-					if((k+remainder)%2) math::Swap (tf.V(0), tf.V(1) );
-					m.face.push_back( tf );
+					if((k+remainder)%2) std::swap (tf.V(0), tf.V(1) );
 				}
 			}
 		}

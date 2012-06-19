@@ -22,11 +22,24 @@
 ****************************************************************************/
 #ifndef __VCGLIB_GLU_TESSELATOR_H
 #define __VCGLIB_GLU_TESSELATOR_H
-
+#include <vcg/space/point2.h>
 #include <vector>
 
 #ifndef GL_VERSION_1_1
 #error "Please include OpenGL before including this file"
+#endif
+
+
+// The inclusion of glu should be always safe (if someone has already included gl stuff).
+#ifndef GLU_VERSIONS
+#ifdef __APPLE__
+#include <OpenGL/glu.h>
+#else
+#ifdef _WIN32
+  #include <windows.h>
+#endif
+#include <GL/glu.h>
+#endif
 #endif
 
 #ifndef CALLBACK

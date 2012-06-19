@@ -56,8 +56,8 @@ namespace vcg {
 
 class SimpleTempDataBase{
 public:
-	virtual ~SimpleTempDataBase() {};
-	SimpleTempDataBase() {};
+  virtual ~SimpleTempDataBase() {}
+  SimpleTempDataBase() {}
 	virtual void Resize(const int & sz) = 0;
 	virtual void Reorder(std::vector<size_t> & newVertIndex)=0;
 	virtual int SizeOf() const  = 0;
@@ -66,7 +66,7 @@ public:
 };
 
 template <class TYPE>
-struct VectorNBW: public std::vector<TYPE> {};
+class VectorNBW: public std::vector<TYPE> {};
 
 template <>
 class VectorNBW<bool>{

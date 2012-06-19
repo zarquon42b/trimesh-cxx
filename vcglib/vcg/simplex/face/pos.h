@@ -114,7 +114,7 @@ public:
 	} 
 	/// Operator to order half-edge; it's compare at the first the face pointers, then the index of the edge and finally the vertex pointers
 	inline bool operator <= ( PosType const & p) const {
-		return	(f!=p.f)?(f<f.p):
+    return	(f!=p.f)?(f<p.f):
 						(z!=p.z)?(z<p.z):
 						(v<=p.v);
 	}	
@@ -430,10 +430,10 @@ public:
 	/// Default constructor
 	VFIterator(){}
 	/// Constructor which associates the half-edge elementet with a face and its vertex
-	VFIterator(FaceType * _f,  const int &  _z){f = _f; z = _z;}
+	VFIterator(FaceType * _f,  const int &  _z){f = _f; z = _z;  assert(z>=0 && "VFAdj must be initialized");}
 
 	/// Constructor which takes a pointer to vertex 
-	VFIterator(VertexType * _v){f = _v->VFp(); z = _v->VFi();}
+	VFIterator(VertexType * _v){f = _v->VFp(); z = _v->VFi(); assert(z>=0 && "VFAdj must be initialized");}
 
 	VFIFaceType *&	F() { return f;}
 	int	&					  I() { return z;}

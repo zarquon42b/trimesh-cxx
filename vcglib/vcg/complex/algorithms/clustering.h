@@ -144,7 +144,7 @@ class  NearestToCenter
 				orig=&v;
 			}
 		}
-    inline void AddFaceVertex(MeshType &m, FaceType &f, int i)    {		assert(0);}
+	inline void AddFaceVertex(MeshType &/*m*/, FaceType &/*f*/, int /*i*/)    {		assert(0);}
     NearestToCenter(): valid(false){}
 		
    CoordType bestPos;
@@ -358,7 +358,7 @@ class Clustering
   void SelectPointSet(MeshType &m)
   {
 		typename STDEXT::hash_map<HashedPoint3i,CellType>::iterator gi;
-                UpdateSelection<MeshType>::ClearVertex(m);
+                UpdateSelection<MeshType>::VertexClear(m);
 		for(gi=GridCell.begin();gi!=GridCell.end();++gi)
     {
       VertexType *ptr=(*gi).second.Ptr();

@@ -217,10 +217,9 @@ namespace vcg {
 		return penetration_detected;
 	}; //end of IntersectionSphereTriangle
 
-
   /// intersection between line and plane
   template<class T>
-    inline bool IntersectionLinePlane( const Plane3<T> & pl, const Line3<T> & li, Point3<T> & po){
+    inline bool IntersectionPlaneLine( const Plane3<T> & pl, const Line3<T> & li, Point3<T> & po){
     const T epsilon = T(1e-8);
 
     T k = pl.Direction().dot(li.Direction());						// Compute 'k' factor
@@ -230,7 +229,13 @@ namespace vcg {
     po = li.Origin() + li.Direction()*r;
     return true;
   }
-	
+    /// intersection between line and plane
+    template<class T>
+    inline bool IntersectionLinePlane(const Line3<T> & li, const Plane3<T> & pl, Point3<T> & po){
+
+      return IntersectionPlaneLine(pl,li,po);
+    }
+
    /// intersection between segment and plane
   template<class T>
     inline bool IntersectionPlaneSegment( const Plane3<T> & pl, const Segment3<T> & s, Point3<T> & p0){
@@ -269,6 +274,8 @@ namespace vcg {
 
   /// intersection between plane and triangle 
   // not optimal: uses plane-segment intersection (and the fact the two or none edges can be intersected)
+  // its use is rather dangerous because it can return inconsistent stuff on degenerate cases.
+  // added assert to underline this danger.
   template<typename TRIANGLETYPE> 
     inline bool IntersectionPlaneTriangle( const Plane3<typename TRIANGLETYPE::ScalarType> & pl, 
 			      const  TRIANGLETYPE & tr, 
@@ -280,15 +287,18 @@ namespace vcg {
           return true;
         else
         {
-          IntersectionPlaneSegment(pl,Segment3<T>(tr.P(1),tr.P(2)),sg.P1());
-          return true;
+          if(IntersectionPlaneSegment(pl,Segment3<T>(tr.P(1),tr.P(2)),sg.P1()))
+            return true;
+          else assert(0);
+              return true;
         }
       }
       else
       {
         if(IntersectionPlaneSegment(pl,Segment3<T>(tr.P(1),tr.P(2)),sg.P0()))
         {
-          IntersectionPlaneSegment(pl,Segment3<T>(tr.P(0),tr.P(2)),sg.P1());
+          if(IntersectionPlaneSegment(pl,Segment3<T>(tr.P(0),tr.P(2)),sg.P1()))return true;
+          assert(0);
           return true;
         }
       }
@@ -611,48 +621,6 @@ bool IntersectionPlaneBox(const vcg::Plane3<ScalarType> &pl,
 	for (int i=1;i<8;i++)  if(  Distance(pl,bbox.P(i))*dist<0) return true;
 	return true;
 }
-
-///if exists return the center and ardius of circle
-///that is the intersectionk between the sphere and 
-//the plane
-template <class ScalarType>
-bool IntersectionPlaneSphere(const Plane3<ScalarType> &pl,
-							   const Sphere3<ScalarType> &sphere,
-							   Point3<ScalarType> &center,
-							   ScalarType &radius)
-{
-	/* ///set the origin on the center of the sphere
-	vcg::Plane3<ScalarType> pl1;
-	vcg::Point3<ScalarType> p_plane=pl.Direction()*pl.Offset();
-	vcg::Point3<ScalarType> p_plane=p_plane-sphere.Center();
-
-	///set again the plane
-	pl1.Set(p_plane,pl.Direction());
-
-	///test d must be positive
-	d=pl1.Offset();
-	vcg::Point3<ScalarType> n=pl1.Direction();
-	///invert d if is <0
-	if (d<0)
-	{
-		n=-n;
-		d=-d;
-	}
-	///no intersection occour
-	if (d>r)
-		return false;
-	else
-	{
-		///calculate center and translate in back
-		center=n*d;
-		center+=sphere.Center();
-		radius=math::Sqrt((r*r)-(d*d));
-	}
-	 */
-	 assert(0);
-	 return true;
-}
-
 
 template<class ScalarType>
 bool IntersectionTriangleBox(const vcg::Box3<ScalarType>   &bbox,

@@ -173,6 +173,7 @@ static void FaceSet(MeshType &m, unsigned int FlagMask)
 
 
 static void VertexClearV(MeshType &m) { VertexClear(m,VertexType::VISITED);}
+static void VertexClearS(MeshType &m) { VertexClear(m,VertexType::SELECTED);}
 static void VertexClearB(MeshType &m) { VertexClear(m,VertexType::BORDER);}
 static void EdgeClearV(MeshType &m) { EdgeClear(m,EdgeType::VISITED);}
 static void FaceClearV(MeshType &m) { FaceClear(m,FaceType::VISITED);}
@@ -334,24 +335,6 @@ static void VertexBorderFromNone(MeshType &m)
 			ps = pe;
 		}
 	}
-}
-
-/// This function fill the flags with the info on what is the best projection direction
-/// for a given face. Used by the point-face distance function when do not exploiting pre-computed 
-/// per-face data (the so called edge component)  
-static void FaceProjection(MeshType &m)
-{
-	FaceIterator fi;
-	for(fi=m.face.begin();fi!=m.face.end();++fi)			// Lo riempio con i dati delle facce
-		if( ! (*fi).IsD() )
-		{
-			ScalarType nx = math::Abs((*fi).cN()[0]);
-			ScalarType ny = math::Abs((*fi).cN()[1]);
-			ScalarType nz = math::Abs((*fi).cN()[2]);
-			if(nx>ny && nx>nz) { (*fi).Flags() |= FaceType::NORMX; }
-			else if(ny>nz)     { (*fi).Flags() |= FaceType::NORMY; }
-			else               { (*fi).Flags() |= FaceType::NORMZ; }
-		}
 }
 
 /// Computes per-face border flags without requiring any kind of topology 

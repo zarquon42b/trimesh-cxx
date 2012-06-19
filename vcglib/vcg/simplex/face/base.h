@@ -50,7 +50,7 @@ template <class UserTypes>
 
 
  // prot
-        int VN()  const { return 3;}
+        inline int VN()  const { return 3;}
         inline int Prev(const int & i) const { return (i+(3-1))%3;}
         inline int Next(const int & i) const { return (i+1)%3;}
 	inline void Alloc(const int & ){}
@@ -70,15 +70,8 @@ we have to build the type a step a time (deriving from a single ancestor at a ti
 
 */ 
 template <class UserTypes>
-class FaceBase: public   face::EmptyPolyInfo<
-						 face::EmptyVertexRef<
-                         face::EmptyAdj<
-                         face::EmptyColorMarkQuality<
-                         face::EmptyNormal<
-                         face::EmptyBitFlags<
-                         face::EmptyWedgeTexCoord<
-												 FaceTypeHolder <UserTypes> > > > > > > > {
-
+class FaceBase: public
+			face::EmptyCore< FaceTypeHolder <UserTypes> > {
 };
 
 
@@ -194,7 +187,14 @@ public:
   void SetB(int i)		{this->Flags() |=(BORDER0<<i);}
 	/// This funcion execute the inverse operation of SetS()
 	void ClearB(int i)	{this->Flags() &= (~(BORDER0<<i));}
-	
+
+	/// This function checks if the face is selected
+	bool IsCrease(int i) const {return (this->Flags() & (CREASE0<<i)) != 0;}
+	/// This function select the face
+	void SetCrease(int i){this->Flags() |=(CREASE0<<i);}
+	/// This funcion execute the inverse operation of SetS()
+	void ClearCrease(int i)	{this->Flags() &= (~(CREASE0<<i));}
+
 	/// This function checks if a given side of the face is a feature/internal edge
 	/// it is used by some importer to mark internal 
 	/// edges of polygonal faces that have been triangulated

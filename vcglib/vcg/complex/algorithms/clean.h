@@ -117,7 +117,8 @@ private:
 			typedef typename MeshType::VertexPointer  VertexPointer;
 			typedef typename MeshType::VertexIterator VertexIterator;
 			typedef typename MeshType::ConstVertexIterator ConstVertexIterator;
-      typedef typename MeshType::EdgeIterator   EdgeIterator;
+		  typedef typename MeshType::EdgeIterator   EdgeIterator;
+		  typedef typename MeshType::EdgePointer  EdgePointer;
 			typedef	typename MeshType::ScalarType			ScalarType;
 			typedef typename MeshType::FaceType       FaceType;
 			typedef typename MeshType::FacePointer    FacePointer;
@@ -207,10 +208,37 @@ private:
                 (*ei).V(k) = &*mp[ (*ei).V(k) ];
               }
         if(RemoveDegenerateFlag) RemoveDegenerateFace(m);
-        if(RemoveDegenerateFlag) RemoveDegenerateEdge(m);
+        if(RemoveDegenerateFlag && m.en>0) {
+          RemoveDegenerateEdge(m);
+          RemoveDuplicateEdge(m);
+        }
 				return deleted;
       }
 
+			class SortedPair
+				  {
+				  public:
+				   SortedPair() {}
+					   SortedPair(unsigned int v0, unsigned int v1, EdgePointer _fp)
+					  {
+						  v[0]=v0;v[1]=v1;
+						  fp=_fp;
+						  if(v[0]>v[1]) std::swap(v[0],v[1]);
+					  }
+					  bool operator < (const SortedPair &p) const
+					  {
+						  return (v[1]!=p.v[1])?(v[1]<p.v[1]):
+									 (v[0]<p.v[0]);				}
+
+					  bool operator == (const SortedPair &s) const
+					  {
+					   if( (v[0]==s.v[0]) && (v[1]==s.v[1]) ) return true;
+					   return false;
+					  }
+
+					  unsigned int v[2];
+					  EdgePointer fp;
+				  };
       class SortedTriple
 			{ 
 			public:
@@ -255,11 +283,11 @@ private:
 																					tri::Index(m,(*fi).V(2)),  
 																																										&*fi));
 						}
-        assert (size_t(m.fn) == fvec.size());
+				assert (size_t(m.fn) == fvec.size());
 				//for(int i=0;i<fvec.size();++i) qDebug("fvec[%i] = (%i %i %i)(%i)",i,fvec[i].v[0],fvec[i].v[1],fvec[i].v[2],tri::Index(m,fvec[i].fp));
 				std::sort(fvec.begin(),fvec.end());
 				int total=0;
-        for(size_t i=0;i<fvec.size()-1;++i)
+				for(int i=0;i<int(fvec.size())-1;++i)
 				{
 					if(fvec[i]==fvec[i+1])
 					{ 
@@ -270,6 +298,36 @@ private:
 				}
 				return total;
 			}
+
+			/** This function removes all duplicate faces of the mesh by looking only at their vertex reference.
+			So it should be called after unification of vertices.
+			Note that it does not update any topology relation that could be affected by this like the VT or TT relation.
+			the reason this function is usually performed BEFORE building any topology information.
+			*/
+			static int RemoveDuplicateEdge( MeshType & m)    // V1.0
+			{
+			  assert(m.fn == 0 && m.en >0); // just to be sure we are using an edge mesh...
+			  std::vector<SortedPair> eVec;
+			  for(EdgeIterator ei=m.edge.begin();ei!=m.edge.end();++ei)
+				if(!(*ei).IsD())
+				{
+				  eVec.push_back(SortedPair(	tri::Index(m,(*ei).V(0)), tri::Index(m,(*ei).V(1)), &*ei));
+				}
+			  assert (size_t(m.en) == eVec.size());
+			  //for(int i=0;i<fvec.size();++i) qDebug("fvec[%i] = (%i %i %i)(%i)",i,fvec[i].v[0],fvec[i].v[1],fvec[i].v[2],tri::Index(m,fvec[i].fp));
+			  std::sort(eVec.begin(),eVec.end());
+			  int total=0;
+			  for(int i=0;i<int(eVec.size())-1;++i)
+			  {
+				if(eVec[i]==eVec[i+1])
+				{
+				  total++;
+				  tri::Allocator<MeshType>::DeleteEdge(m, *(eVec[i].fp) );
+				  //qDebug("deleting face %i (pos in fvec %i)",tri::Index(m,fvec[i].fp) ,i);
+				}
+			  }
+			  return total;
+			}
 			/** This function removes that are not referenced by any face. The function updates the vn counter.
 			@param m The mesh
 			@return The number of removed vertices
@@ -277,6 +335,7 @@ private:
 			static int RemoveUnreferencedVertex( MeshType& m, bool DeleteVertexFlag=true)   // V1.0
 			{
 				FaceIterator fi;
+				EdgeIterator ei;
 				VertexIterator vi;
 				int referredBit = VertexType::NewBitFlag();
 
@@ -291,14 +350,20 @@ private:
 						for(j=0;j<3;++j)
 							(*fi).V(j)->SetUserBit(referredBit);
 
+				for(ei=m.edge.begin();ei!=m.edge.end();++ei)
+					if( !(*ei).IsD() ){
+					  (*ei).V(0)->SetUserBit(referredBit);
+					  (*ei).V(1)->SetUserBit(referredBit);
+					}
+
 				for(vi=m.vert.begin();vi!=m.vert.end();++vi)
 					if( (!(*vi).IsD()) && (!(*vi).IsUserBit(referredBit)))
 					{
 						if(DeleteVertexFlag) Allocator<MeshType>::DeleteVertex(m,*vi);
-            ++deleted;
+						++deleted;
 					}
-					VertexType::DeleteBitFlag(referredBit);
-					return deleted;
+				VertexType::DeleteBitFlag(referredBit);
+				return deleted;
 			}
 
       /**
@@ -420,7 +485,7 @@ private:
               std::set<FaceInt> faceSet;
               do
               {
-                faceSet.insert(make_pair(curPos.F(),curPos.VInd()));
+                faceSet.insert(std::make_pair(curPos.F(),curPos.VInd()));
                 curPos.NextE();
               } while (curPos != startPos);
 
@@ -542,7 +607,7 @@ private:
 			static bool IsBitQuadOnly(const MeshType &m) 
       {
         typedef typename MeshType::FaceType F;
-        if (!m.HasPerFaceFlags()) return false;
+        if (!HasPerFaceFlags(m)) return false;
 				for (ConstFaceIterator fi = m.face.begin(); fi != m.face.end(); ++fi) if (!fi->IsD()) {
           unsigned int tmp = fi->Flags()&(F::FAUX0|F::FAUX1|F::FAUX2);
           if ( tmp != F::FAUX0 && tmp != F::FAUX1 && tmp != F::FAUX2) return false;
@@ -556,7 +621,7 @@ private:
 			 */
       static bool IsBitTriOnly(const MeshType &m) 
 			{
-        if (!m.HasPerFaceFlags()) return true;
+		if (!HasPerFaceFlags(m)) return true;
 				for (ConstFaceIterator fi = m.face.begin(); fi != m.face.end(); ++fi) {
           if (
             !fi->IsD()  &&  fi->IsAnyF()  
@@ -575,7 +640,7 @@ private:
 			static bool IsBitTriQuadOnly(const MeshType &m) 
       {
         typedef typename MeshType::FaceType F;
-        if (!m.HasPerFaceFlags()) return false;
+        if (!HasPerFaceFlags(m)) return false;
 				for (ConstFaceIterator fi = m.face.begin(); fi != m.face.end(); ++fi) if (!fi->IsD()) {
           unsigned int tmp = fi->Flags()&(F::FAUX0|F::FAUX1|F::FAUX2);
           if ( tmp!=F::FAUX0 && tmp!=F::FAUX1 && tmp!=F::FAUX2 && tmp!=0 ) return false;
@@ -588,7 +653,7 @@ private:
 			 */
 			static int CountBitQuads(const MeshType &m) 
       {
-        if (!m.HasPerFaceFlags()) return 0;
+        if (!HasPerFaceFlags(m)) return 0;
         typedef typename MeshType::FaceType F;
         int count=0;
 				for (ConstFaceIterator fi = m.face.begin(); fi != m.face.end(); ++fi) if (!fi->IsD()) {
@@ -603,7 +668,7 @@ private:
 			 */
 			static int CountBitTris(const MeshType &m) 
       {
-        if (!m.HasPerFaceFlags()) return m.fn;
+        if (!HasPerFaceFlags(m)) return m.fn;
         int count=0;
 				for (ConstFaceIterator fi = m.face.begin(); fi != m.face.end(); ++fi) if (!fi->IsD()) {
           if (!(fi->IsAnyF())) count++;
@@ -616,7 +681,7 @@ private:
 			 */
 			static int CountBitPolygons(const MeshType &m) 
 			{
-        if (!m.HasPerFaceFlags()) return m.fn;
+		if (!HasPerFaceFlags(m)) return m.fn;
         typedef typename MeshType::FaceType F;
         int count = 0;
 				for (ConstFaceIterator fi = m.face.begin(); fi != m.face.end(); ++fi) if (!fi->IsD())  {
@@ -649,7 +714,7 @@ private:
 
 				
         // Second Loop, count (twice) faux edges and mark all vertices touched by non faux edges (e.g vertexes on the boundary of a polygon) 
-				if (!m.HasPerFaceFlags()) return m.fn;
+                if (!HasPerFaceFlags(m)) return m.fn;
         typedef typename MeshType::FaceType F;
         int countE = 0;
 				for (FaceIterator fi = m.face.begin(); fi != m.face.end(); ++fi) 
@@ -684,8 +749,8 @@ private:
 			 */
       static bool HasConsistentPerFaceFauxFlag(const MeshType &m)
       {
-        assert(m.HasPerFaceFlags());
-        assert(m.HasFFTopology()); // todo: remove this constraint
+        assert(HasPerFaceFlags(m));
+        assert(HasFFAdjacency(m)); // todo: remove this constraint
         
         for (ConstFaceIterator fi = m.face.begin(); fi != m.face.end(); ++fi)
           if(!(*fi).IsD()) 
@@ -701,7 +766,7 @@ private:
       
       static bool HasConsistentEdges(const MeshType &m)
       {
-        assert(m.HasPerFaceFlags());
+        assert(HasPerFaceFlags(m));
         
         for (ConstFaceIterator fi = m.face.begin(); fi != m.face.end(); ++fi)
           if(!(*fi).IsD()) 
@@ -717,7 +782,41 @@ private:
         return true;
       }
 
+      /**
+       * Count the number of non manifold edges in a polylinemesh, e.g. the edges where there are more than 2 incident faces.
+       *
+       */
+      static int CountNonManifoldEdgeEE( MeshType & m, bool SelectFlag=false)
+      {
+        assert(m.fn == 0 && m.en >0); // just to be sure we are using an edge mesh...
+        assert(tri::HasEEAdjacency(m));
+        tri::UpdateTopology<MeshType>::EdgeEdge(m);
 
+        if(SelectFlag) UpdateSelection<MeshType>::VertexClear(m);
+
+        int nonManifoldCnt=0;
+        SimpleTempData<typename MeshType::VertContainer, int > TD(m.vert,0);
+
+        // First Loop, just count how many faces are incident on a vertex and store it in the TemporaryData Counter.
+        EdgeIterator ei;
+        for (ei = m.edge.begin(); ei != m.edge.end(); ++ei)	if (!ei->IsD())
+        {
+          TD[(*ei).V(0)]++;
+          TD[(*ei).V(1)]++;
+        }
+
+        tri::UpdateFlags<MeshType>::VertexClearV(m);
+        // Second Loop, Check that each vertex have been seen 1 or 2 times.
+        for (VertexIterator vi = m.vert.begin(); vi != m.vert.end(); ++vi)	if (!vi->IsD())
+        {
+          if( TD[vi] >2 )
+          {
+            if(SelectFlag) (*vi).SetS();
+            nonManifoldCnt++;
+          }
+        }
+        return nonManifoldCnt;
+      }
 
       /**
        * Count the number of non manifold edges in a mesh, e.g. the edges where there are more than 2 incident faces.
@@ -736,8 +835,8 @@ private:
         UpdateFlags<MeshType>::FaceClear(m,nmfBit[0]+nmfBit[1]+nmfBit[2]);
 
         if(SelectFlag){
-          UpdateSelection<MeshType>::ClearVertex(m);
-          UpdateSelection<MeshType>::ClearFace(m);
+          UpdateSelection<MeshType>::VertexClear(m);
+          UpdateSelection<MeshType>::FaceClear(m);
         }
         assert(tri::HasFFAdjacency(m));
 
@@ -780,7 +879,7 @@ private:
       static int CountNonManifoldVertexFF( MeshType & m, bool selectVert = true )
 			{
         assert(tri::HasFFAdjacency(m));
-        if(selectVert) UpdateSelection<MeshType>::ClearVertex(m);
+        if(selectVert) UpdateSelection<MeshType>::VertexClear(m);
 
 				int nonManifoldCnt=0;
 				SimpleTempData<typename MeshType::VertContainer, int > TD(m.vert,0);
@@ -882,14 +981,15 @@ private:
 			{
         int numholev=0;
         FaceIterator fi;
+		
 				FaceIterator gi;
 				vcg::face::Pos<FaceType> he;
 				vcg::face::Pos<FaceType> hei;
 
         std::vector< std::vector<Point3x> > holes; //indices of vertices
 
-				for(fi=m.face.begin();fi!=m.face.end();++fi)
-					(*fi).ClearS();
+				vcg::tri::UpdateFlags<MeshType>::VertexClearS(m);
+
 				gi=m.face.begin(); fi=gi;
 
 				for(fi=m.face.begin();fi!=m.face.end();fi++)//for all faces do
@@ -1008,7 +1108,7 @@ private:
 
 			For general polyhedra the <em>Euler Formula</em> is:
 
-			      V + F - E = 2 - 2G - B
+				  V - E + F = 2 - 2G - B
 
 			where V is the number of vertices, F is the number of faces, E is the
 			number of edges, G is the genus and B is the number of <em>boundary polygons</em>.
@@ -1016,18 +1116,31 @@ private:
 			The above formula is valid for a mesh with one single connected component. 
 			By considering multiple connected components the formula becomes:
 
-			      V + F - E = 2C - 2Gs - B
+				  V - E + F = 2C - 2Gs - B   ->   2Gs = - ( V-E+F +B -2C)
 
 			where C is the number of connected components and Gs is the sum of
 			the genus of all connected components.
 
+			Note that in the case of a mesh with boundaries the intuitive meaning of Genus is less intuitive that it could seem.
+			A closed sphere, a sphere with one hole (e.g. a disk) and a sphere with two holes (e.g. a tube) all of them have Genus == 0
+
 			*/
-			static int MeshGenus(MeshType &m, int numholes, int numcomponents, int count_e)
+
+			static int MeshGenus(int nvert,int nedges,int nfaces, int numholes, int numcomponents)
 			{
-				int V = m.vn;
-				int F = m.fn;
-				int E = count_e;
-				return -((V + F - E + numholes - 2 * numcomponents) / 2);
+				return -((nvert + nfaces - nedges + numholes - 2 * numcomponents) / 2);
+			}
+			
+			static int MeshGenus(MeshType &m)
+			{
+				int nvert=m.vn;
+				int nfaces=m.fn;
+				int boundary_e,nedges;
+				CountEdges(m,nedges,boundary_e);
+				int numholes=CountHoles(m);
+				int numcomponents=CountConnectedComponents(m);
+				int G=MeshGenus(nvert,nedges,nfaces,numholes,numcomponents);
+				return G;
 			}
 
 			/**
@@ -1088,12 +1201,15 @@ private:
 					Semiregular = false;
 				}
 			}
-
-			static void IsOrientedMesh(MeshType &m, bool &Oriented, bool &Orientable)
+//      static void IsOrientedMesh(MeshType &m, bool &Oriented, bool &Orientable)
+      static void OrientCoherentlyMesh(MeshType &m, bool &Oriented, bool &Orientable)
 			{
         assert(&Oriented != &Orientable);
 				// This algorithms requires FF topology
-				assert(m.HasFFTopology());
+				assert(HasFFAdjacency(m));
+				// This algorithms require FF topology initialized
+				assert(m.face.back().FFp(0));
+
 
 				Orientable = true;
 				Oriented = true;
@@ -1233,8 +1349,8 @@ private:
       // - choose the edge that brings to the face f1 containing the vertex opposite to that edge.
       static int RemoveFaceFoldByFlip(MeshType &m, float normalThresholdDeg=175, bool repeat=true)
       {
-            assert(m.HasFFTopology());
-            assert(m.HasPerVertexMark());
+            assert(HasFFAdjacency(m));
+            assert(HasPerVertexMark(m));
             //Counters for logging and convergence
             int count, total = 0;
 
@@ -1283,8 +1399,8 @@ private:
 
 	static int RemoveTVertexByFlip(MeshType &m, float threshold=40, bool repeat=true)
 	{
-        assert(m.HasFFTopology());
-        assert(m.HasPerVertexMark());
+		assert(HasFFAdjacency(m));
+		assert(HasPerVertexMark(m));
         //Counters for logging and convergence
         int count, total = 0;
 
@@ -1571,6 +1687,7 @@ static std::pair<int,int>  RemoveSmallConnectedComponentsSize(MeshType &m, int m
 			return std::make_pair<int,int>(TotalCC,DeletedCC);
 }
 
+
 /// Remove the connected components smaller than a given diameter
 // it returns a pair with the number of connected components and the number of deleted ones.
 static std::pair<int,int> RemoveSmallConnectedComponentsDiameter(MeshType &m, ScalarType maxDiameter)
@@ -1591,6 +1708,36 @@ static std::pair<int,int> RemoveSmallConnectedComponentsDiameter(MeshType &m, Sc
             bb.Add((*ci)->P(2));
         } 
         if(bb.Diag()<maxDiameter)
+        {
+					DeletedCC++;
+          typename std::vector<typename MeshType::FacePointer>::iterator fpvi;
+          for(fpvi=FPV.begin(); fpvi!=FPV.end(); ++fpvi)
+						tri::Allocator<MeshType>::DeleteFace(m,(**fpvi));
+        }
+      }
+			return std::make_pair<int,int>(TotalCC,DeletedCC);
+}
+
+/// Remove the connected components greater than a given diameter
+// it returns a pair with the number of connected components and the number of deleted ones.
+static std::pair<int,int> RemoveHugeConnectedComponentsDiameter(MeshType &m, ScalarType minDiameter)
+{
+  std::vector< std::pair<int, typename MeshType::FacePointer> > CCV;
+      int TotalCC=ConnectedComponents(m, CCV); 
+      int DeletedCC=0; 
+      tri::ConnectedIterator<MeshType> ci;
+      for(unsigned int i=0;i<CCV.size();++i)
+      {
+        Box3f bb;
+        std::vector<typename MeshType::FacePointer> FPV;
+        for(ci.start(m,CCV[i].second);!ci.completed();++ci)
+        {
+            FPV.push_back(*ci);
+            bb.Add((*ci)->P(0));
+            bb.Add((*ci)->P(1));
+            bb.Add((*ci)->P(2));
+        } 
+        if(bb.Diag()>minDiameter)
         {
 					DeletedCC++;
           typename std::vector<typename MeshType::FacePointer>::iterator fpvi;

@@ -58,7 +58,7 @@ namespace vcg {
 		class FaceTmark:public Tmark<MESH_TYPE,typename MESH_TYPE::FaceType>
 		{
 		public:
-			FaceTmark() {}
+			FaceTmark(){}
 			FaceTmark(MESH_TYPE *m) {this->SetMesh(m);}
 		};
 
@@ -181,6 +181,23 @@ namespace vcg {
 		}
 
 		template <class MESH, class GRID>
+			typename MESH::VertexType * GetClosestVertexScale( MESH & mesh,GRID & gr,const typename GRID::CoordType & _p, 
+			const typename MESH::CoordType & center, const typename GRID::ScalarType & _maxDist,typename GRID::ScalarType & _minDist )
+		{
+			typedef typename GRID::ScalarType ScalarType;
+			typedef Point3<ScalarType> Point3x;
+			typedef VertTmark<MESH> MarkerVert;
+			MarkerVert mv;
+			mv.SetMesh(&mesh);
+			typedef vcg::vertex::PointScaledDistanceFunctor<typename MESH::VertexType> VDistFunct;
+			VDistFunct fn;
+			fn.Cen() = center;
+			_minDist=_maxDist;
+			Point3x _closestPt;
+			return (gr.template GetClosest<VDistFunct,MarkerVert>(fn,mv,_p,_maxDist,_minDist,_closestPt));
+		}
+
+		template <class MESH, class GRID>
 			typename MESH::VertexType * GetClosestVertexNormal( MESH & mesh,GRID & gr,const typename MESH::VertexType & _p, 
 			const typename GRID::ScalarType & _maxDist,typename GRID::ScalarType & _minDist )
 		{
@@ -280,8 +297,7 @@ namespace vcg {
 			OBJPTRCONTAINER & _objectPtrs) 
 		{
 			typedef FaceTmark<MESH> MarkerFace;
-			MarkerFace mf;
-			mf.SetMesh(&mesh);
+			MarkerFace mf(&mesh);
 			return(gr.GetInBox/*<MarkerFace,OBJPTRCONTAINER>*/(mf,_bbox,_objectPtrs));
 		}
 
@@ -332,13 +348,14 @@ namespace vcg {
 			typename GRID::CoordType dir=_ray.Direction();
 			dir.Normalize();
 			typename GRID::CoordType int_point=_ray.Origin()+_ray1.Direction()*_t;
-			typename GRID::ScalarType alfa,beta,gamma;
 			if (f!=NULL)
 			{
-				InterpolationParameters<FaceType,ScalarType>(*f,f->N(),int_point, alfa, beta, gamma);
-				_normf =  (f->V(0)->cN())*alfa+
-									(f->V(1)->cN())*beta+
-									(f->V(2)->cN())*gamma ;
+                Point3<typename GRID::ScalarType> bary;
+                InterpolationParameters<FaceType,ScalarType>(*f,f->N(),int_point, bary);
+
+                _normf =  (f->V(0)->cN())*bary.X()+
+                                    (f->V(1)->cN())*bary.Y()+
+                                    (f->V(2)->cN())*bary.Z() ;
 			}
 			return f;
 		}

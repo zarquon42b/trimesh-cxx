@@ -115,7 +115,7 @@ public:
   static bool HasMarkOcc()   { return false; }
   inline void InitIMark()    {  }
   inline int & IMark()       { assert(0); static int tmp=-1; return tmp;}
-  inline const int & IMark() const {return 0;}
+  inline int IMark() const {return 0;}
 	template < class LeftV>
 	void ImportData(const LeftV  & left ) { T::ImportData( left); }
 	static void Name(std::vector<std::string> & name){T::Name(name);}
@@ -248,8 +248,8 @@ public: static void Name(std::vector<std::string> & name){name.push_back(std::st
 	VEAdj(){_ep[0]=0;_ep[1]=0;_zp[0]=-1;_zp[1]=-1;}
 	typename T::EdgePointer &VEp(const int & i) {return _ep[i]; }
 	typename T::EdgePointer cVEp(const int & i) const {return _ep[i]; }
-	int &EEi(const int & i){ return _zp[i];}
-	int cEEi(const int &i )const {return _zp[i];}
+	int &VEi(const int & i){ return _zp[i];}
+	int cVEi(const int &i )const {return _zp[i];}
 
 	template < class LeftV>
 	void ImportData(const LeftV  & left ) {  T::ImportData( left); }

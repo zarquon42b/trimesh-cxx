@@ -244,11 +244,12 @@ public:
 	/// Modificatore prodotto per matrice
 	void operator *=( const Matrix33< S> & t )
 	{
+                Matrix33<S> r;
 		int i,j;
 		for(i=0;i<3;++i)
 			for(j=0;j<3;++j)
-					(*this)[i][j] = (*this)[i][0]*t[0][j] + (*this)[i][1]*t[1][j] + (*this)[i][2]*t[2][j];
-
+                                        r[i][j] = (*this)[i][0]*t[0][j] + (*this)[i][1]*t[1][j] + (*this)[i][2]*t[2][j];
+                for(i=0;i<9;++i) this->a[i] = r.a[i];
 	}
 
 	/// Dot product with a diagonal matrix
@@ -267,11 +268,13 @@ public:
 		/// Dot product modifier with a diagonal matrix
 	void operator *=( const Matrix33Diag< S> & t )
 	{
+            Matrix33<S> r;
 		int i,j;
 		for(i=0;i<3;++i)
 			for(j=0;j<3;++j)
-					(*this)[i][j] = (*this)[i][j]*t[j];
-	}
+                                        r[i][j] = (*this)[i][j]*t[j];
+                for(i=0;i<9;++i) this->a[i] = r.a[i];
+        }
 
 	/// Modificatore prodotto per costante
 	Matrix33 & operator *= ( const S t )
@@ -500,7 +503,7 @@ public:
 		return *this;
 	}
 
-	void show(FILE * fp)
+  void show(FILE * /*fp*/)
 	{
 		for(int i=0;i<3;++i)
 		    printf("| %g \t%g \t%g |\n",a[3*i+0],a[3*i+1],a[3*i+2]);
@@ -623,6 +626,30 @@ void WeightedCrossCovariance(const STLREALCONTAINER &  weights,
 private:
 	S a[9];
 };
+
+///return the tranformation matrix to transform 
+///to the frame specified by the three vectors
+template <class S>
+vcg::Matrix33<S> TransformationMatrix(const vcg::Point3<S> dirX,
+										const vcg::Point3<S> dirY,
+										const vcg::Point3<S> dirZ)
+{
+	vcg::Matrix33<S> Trans;
+
+	///it must have right orientation cause of normal
+	Trans[0][0]=dirX[0];
+	Trans[0][1]=dirX[1];
+	Trans[0][2]=dirX[2];
+	Trans[1][0]=dirY[0];
+	Trans[1][1]=dirY[1];
+	Trans[1][2]=dirY[2];
+	Trans[2][0]=dirZ[0];
+	Trans[2][1]=dirZ[1];
+	Trans[2][2]=dirZ[2];
+
+	/////then find the inverse 
+	return (Trans);
+}
 
 template <class S>
 void 	 Invert(Matrix33<S> &m)

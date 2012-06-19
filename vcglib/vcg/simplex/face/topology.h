@@ -251,8 +251,8 @@ void Attach(FaceType * &f, int z1, FaceType *&f2, int z2)
 		EPB.NextF();
 	}
 	//Salvo i dati di f1 prima di sovrascrivere
-	FaceType *f1prec = f.FFp(z1);  
-	int z1prec = f.FFi(z1);
+  FaceType *f1prec = f->FFp(z1);
+  int z1prec = f->FFi(z1);
 	//Aggiorno f1
 	f->FFp(z1) = TEPB.f->FFp(TEPB.z);  
 	f->FFi(z1) = TEPB.f->FFi(TEPB.z);
@@ -357,7 +357,54 @@ void SwapEdge(FaceType &f, const int z)
 }
 
 /*!
-* Check if the z-th edge of the face f can be flipped.
+* Perform a Geometric Check about the normals of a edge flip.
+* return trues if after the flip the normals does not change more than the given threshold angle;
+* it assumes that the flip is topologically correct.
+*
+*	\param f	the face
+*	\param z	the edge index
+*   \param angleRad the threshold angle
+*
+*  oldD1 ___________ newD1
+*       |\          |
+*       |  \        |
+*       |    \      |
+*       |  f  z\    |
+*       |        \  |
+*       |__________\|
+* newD0               oldD0
+*/
+
+template <class FaceType>
+static bool CheckFlipEdgeNormal(FaceType &f, const int z, const float angleRad)
+{
+  typedef typename FaceType::VertexType VertexType;
+  typedef typename VertexType::CoordType CoordType;
+  typedef typename VertexType::ScalarType ScalarType;
+
+  VertexType *OldDiag0 = f.V0(z);
+  VertexType *OldDiag1 = f.V1(z);
+
+  VertexType *NewDiag0 = f.V2(z);
+  VertexType *NewDiag1 = f.FFp(z)->V2(f.FFi(z));
+
+  assert((NewDiag1 != NewDiag0) && (NewDiag1 != OldDiag0) && (NewDiag1 != OldDiag1));
+
+  CoordType oldN0 = NormalizedNormal( NewDiag0->cP(),OldDiag0->cP(),OldDiag1->cP());
+  CoordType oldN1 = NormalizedNormal( NewDiag1->cP(),OldDiag1->cP(),OldDiag0->cP());
+  CoordType newN0 = NormalizedNormal( OldDiag0->cP(),NewDiag1->cP(),NewDiag0->cP());
+  CoordType newN1 = NormalizedNormal( OldDiag1->cP(),NewDiag0->cP(),NewDiag1->cP());
+  if(AngleN(oldN0,newN0) > angleRad) return false;
+  if(AngleN(oldN0,newN1) > angleRad) return false;
+  if(AngleN(oldN1,newN0) > angleRad) return false;
+  if(AngleN(oldN1,newN1) > angleRad) return false;
+
+  return true;
+}
+
+/*!
+* Perform a Topological check to see if the z-th edge of the face f can be flipped.
+* No Geometric test are done. (see CheckFlipEdgeNormal)
 *	\param f	pointer to the face
 *	\param z	the edge index
 */
@@ -557,6 +604,51 @@ void VFStarVF( typename FaceType::VertexType* vp, std::vector<FaceType *> &faceV
 		++vfi;
 	}
 }
+
+/*!
+* Compute the ordered set of faces adjacent to a given vertex using VF adjacency.and FF adiacency 
+*	\param vp	pointer to the vertex whose star has to be computed.
+*	\param faceVec a std::vector of Face pointer that is filled with the adjacent faces.
+*
+*/
+template <class FaceType>
+static void VFOrderedStarVF_FF(typename FaceType::VertexType &vp,
+								std::vector<FaceType*> &faceVec)
+{
+
+	///check that is not on border..
+	assert (!vp.IsB());
+
+	///get first face sharing the edge
+	FaceType *f_init=vp.VFp();
+	int edge_init=vp.VFi(); 
+
+	///and initialize the pos
+	vcg::face::Pos<FaceType> VFI(f_init,edge_init);
+	bool complete_turn=false;
+	do  
+	{
+		FaceType *curr_f=VFI.F();
+		faceVec.push_back(curr_f);
+
+		int curr_edge=VFI.E();
+
+		///assert that is not a border edge
+		assert(curr_f->FFp(curr_edge)!=curr_f);
+
+		///continue moving 
+		VFI.FlipF();
+		VFI.FlipE();
+
+		FaceType *next_f=VFI.F();
+
+		///test if I've finiseh with the face exploration
+		complete_turn=(next_f==f_init);
+		/// or if I've just crossed a mismatch
+	}while (!complete_turn);
+}
+
+
 /*!
 * Check if two faces share and edge through the FF topology.
 *	\param f0,f1 the two face to be checked
