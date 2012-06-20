@@ -117,7 +117,7 @@ if (col == false && noclean == false)
  if (col == true && noclean ==false)
    {
      int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
-     if (dup > 0 || unref > 0)
+     if (unref > 0)
        printf("Removed %i unreferenced vertices from mesh %s\n",unref,argv[2]);
    }
  
