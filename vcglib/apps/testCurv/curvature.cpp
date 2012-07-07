@@ -55,15 +55,16 @@ typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
 	char filename[256];
-        bool noclean = false, col =false;
+        bool noclean = false, col =false, RMS = false;
   if (argc< 3){
 		printf("\n");
     printf("    Convert a mesh to ascii ply format\n");
-    printf("    Usage: ply2ascii <input.mesh> <output.ply> [option]\n");
+    printf("    Usage: curvature <input.mesh> <output.ply> [option]\n");
     printf("       <mesh>        any common mesh file (any common mesh file).\n");
     printf("       <output.ply>      cleaned mesh with updated vertex normals saved in ascii PLY format.\n");
     printf("       --noclean      skip cleaning duplicate and unreferenced vertices.\n");
     printf("       --color        export vertex colors - if none are present, vertices will be colored white.\n");
+    printf("       --rms        export vertex colors - if none are present, vertices will be colored white.\n");
 
 
     
@@ -80,6 +81,10 @@ int main(int argc,char ** argv){
  if (strcmp("--color", argv[i]) == 0)
                   {
                     col = true;
+		  }
+ if (strcmp("--rms", argv[i]) == 0)
+                  {
+                    RMS = true;
 		  }
   }
 
@@ -129,7 +134,7 @@ if (col == false && noclean == false)
    }
   tri::UpdateQuality<MyMesh>::VertexConstant(mesh, 1);  
 
- //tri::UpdateTopology<MyMesh>::VertexFace(mesh);
+  tri::UpdateTopology<MyMesh>::VertexFace(mesh);
  //tri::UpdateFlags<MyMesh>::FaceBorderFromVF(mesh);
   tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
@@ -142,10 +147,16 @@ if (col == false && noclean == false)
   
   tri::Allocator<MyMesh>::CompactVertexVector(mesh);
   tri::UpdateCurvature<MyMesh>::MeanAndGaussian(mesh);
+  //tri::UpdateCurvature<MyMesh>::VertexCurvature(mesh);
   //tri::UpdateQuality<MyMesh>::VertexFromRMSCurvature(mesh);  
-  //tri::UpdateQuality<MyMesh>::VertexFromRMSCurvature(mesh);  
-  tri::UpdateQuality<MyMesh>::VertexFromMeanCurvature(mesh);  
-
+  if (RMS == true)
+    {
+      tri::UpdateQuality<MyMesh>::VertexFromRMSCurvature(mesh);  
+    }
+  else
+    {  
+      tri::UpdateQuality<MyMesh>::VertexFromMeanCurvature(mesh);
+    }
   // vcg::CallBackPos *cb;
 
   
