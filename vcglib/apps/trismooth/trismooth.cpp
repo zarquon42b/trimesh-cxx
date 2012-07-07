@@ -127,16 +127,16 @@ int main(int argc,char ** argv){
   // Remove duplicates and update mesh properties
   //--------------------------------------------------------------------------------------//
 
-  int dup = tri::Clean<MyMesh>::RemoveDuplicateVertex(mesh);
+  /*int dup = tri::Clean<MyMesh>::RemoveDuplicateVertex(mesh);
         int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
   if (dup > 0 || unref > 0)
-                printf("Removed %i duplicate and %i unreferenced vertices from mesh %s\n",dup,unref,argv[1]);
+  printf("Removed %i duplicate and %i unreferenced vertices from mesh %s\n",dup,unref,argv[1]);*/
   tri::UpdateBounding<MyMesh>::Box(mesh);
-  tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
+  //tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   //tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
-  tri::UpdateNormals<MyMesh>::NormalizeVertex(mesh);
+  //tri::UpdateNormals<MyMesh>::NormalizeVertex(mesh);
   tri::Smooth<MyMesh>::VertexCoordTaubin(mesh,iteration,lambda,-0.53);
-  tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
+  //tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
   tri::UpdateNormals<MyMesh>::NormalizeVertex(mesh);
 
