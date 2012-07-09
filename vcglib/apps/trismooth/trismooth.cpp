@@ -45,23 +45,25 @@ class MyMesh : public tri::TriMesh< vector<MyVertex>, vector<MyFace > >{};
 typedef MyMesh::ScalarType ScalarType;
 
 // Uncomment only one of the two following lines to test different data structures
-typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
+//typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 //typedef vcg::SpatialHashTable<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
         char filename[256];
-        int iteration;
-        float lambda;
+        int iteration = 10;
+        float lambda = 0.5;
         bool lcheck=false;
-        bool icheck=false;
+        bool icheck=false, laplace=false, lapang=false, lapHC=false;
         bool noout=false;
   if (argc< 3){
           printf("\n");
           printf("    Smooth a mesh using a taubin smooth\n");
           printf("    Usage: trismooth <input.mesh> <output.ply>\n");
-          printf("       <input>        any common mesh file (any common mesh file).\n");
+          printf("       <input>             any common mesh file (any common mesh file).\n");
           printf("       [-it <integer>]     smoothing iterations (default is 10).\n");
           printf("       [-l <float>]        lambda value (default is 0.5).\n");
+	  printf("       [--laplace]         use laplacian smoothing.\n");
+	  printf("       [--lapHC]           use laplacian HC smoothing.\n");
           printf("       <output>            smoothed mesh with taubin smooth applied (PLY Format).\n");
 
    
@@ -73,30 +75,61 @@ int main(int argc,char ** argv){
 
                       if (strcmp("-l", argv[i]) == 0) {
                       lambda = atof(argv[i + 1]);
-                      lcheck=true;
+                      //lcheck=true;
                       if (i==argc-2)
                       {noout=true;}
                   }
 
 
-                  if (strcmp("-it", argv[i]) == 0) {
-                        iteration=atoi(argv[i + 1]);
-                        icheck=true;
-                        if (i== (argc-2))
+                  if (strcmp("-it", argv[i]) == 0) 
+		    {
+		      iteration=atoi(argv[i + 1]);
+		      //icheck=true;
+		      if (i== (argc-2))
                         {noout=true;
-                        //printf("please specify output file");
+			  //printf("please specify output file");
                         }
-
-                  }
-                }
-             }
+		    }
+	    }
+	}
+	for (int i = 1; i < argc; i++) {
+	      if (i  != argc) 
+		{
+		  if (strcmp("--laplace", argv[i]) == 0) 
+		    {
+		      laplace=true;
+		      if (i== (argc-1))
+                        {noout=true;
+			  //printf("please specify output file");
+			}		  
+			}
+		  if (strcmp("--lapang", argv[i]) == 0) 
+		    {
+		      lapang=true;
+		      if (i== (argc-1))
+                        {noout=true;
+			  //printf("please specify output file");
+			  }		  
+		  }
+if (strcmp("--lapHC", argv[i]) == 0) 
+		    {
+		      lapHC=true;
+		      if (i== (argc-1))
+                        {noout=true;
+			  //printf("please specify output file");
+			  }		  
+		  }
+	      }
+	}
+	
       //  printf("%i\n",argc);
-        if (lcheck == false)
+        /*if (lcheck == false)
         {lambda=0.5;
         }
         if (icheck == false)
         {iteration = 10;
         }
+	*/
         if (noout==true)
         {printf("Error: please specify output file\n");
             return 0;
@@ -135,8 +168,28 @@ int main(int argc,char ** argv){
   //tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   //tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
   //tri::UpdateNormals<MyMesh>::NormalizeVertex(mesh);
+  if (laplace == true)
+    {
+      tri::Smooth<MyMesh>::VertexCoordLaplacian(mesh,iteration,false);
+    }
+  else if (lapang == true)
+    {
+      // tri::Smooth<MyMesh>::VertexCoordLaplacianCurvatureFlow(mesh,iteration, lambda);
+      tri::Smooth<MyMesh>::VertexCoordLaplacianAngleWeighted(mesh,iteration,lambda);
+
+    }
+else if (lapHC == true)
+    {
+      // tri::Smooth<MyMesh>::VertexCoordLaplacianCurvatureFlow(mesh,iteration, lambda);
+      tri::Smooth<MyMesh>::VertexCoordLaplacianHC(mesh,iteration);
+    }
+
+  else
+    {
+    
   tri::Smooth<MyMesh>::VertexCoordTaubin(mesh,iteration,lambda,-0.53);
-  //tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
+    }  
+//tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
   tri::UpdateNormals<MyMesh>::NormalizeVertex(mesh);
 

@@ -80,12 +80,12 @@ int main(int argc,char ** argv){
                     }
             }
     for (int i = 1; i < argc; i++) {
-  if (i  != argc) {// Check options with arguments
+      if (i  != argc) {// Check options with arguments
 
                         if (strcmp("--nosmooth", argv[i]) == 0)
                         {nosmooth=true;
                         }
- if (strcmp("--sign", argv[i]) == 0)
+			if (strcmp("--sign", argv[i]) == 0)
                         {sign=true;
                         }
             }
