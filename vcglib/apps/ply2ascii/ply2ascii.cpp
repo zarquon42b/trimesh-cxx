@@ -105,7 +105,7 @@ int main(int argc,char ** argv){
   // Update the bounding box and initialize max search distance
   // Remove duplicates and update mesh properties
   //--------------------------------------------------------------------------------------//
-if (col == false && noclean == false)
+if (noclean == false)
 {
   int dup = tri::Clean<MyMesh>::RemoveDuplicateVertex(mesh);
   int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
@@ -114,12 +114,12 @@ if (col == false && noclean == false)
                 printf("Removed %i duplicate and %i unreferenced vertices from mesh %s\n",dup,unref,argv[2]);
     }
 }
- if (col == true && noclean ==false)
+/* if (col == true && noclean ==false)
    {
      int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
      if (unref > 0)
        printf("Removed %i unreferenced vertices from mesh %s\n",unref,argv[2]);
-   }
+       }*/
  
   tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
