@@ -174,8 +174,22 @@ int main(int argc,char ** argv){
     MyFace* f_ptr= GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
     int f_i = vcg::tri::Index(mesh, f_ptr);
     out_cloud.vert[i].Q() = minDist;
-    MyMesh::CoordType tt = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-    tt=tt/sqrt(tt.dot(tt));
+    MyMesh::CoordType tt;
+     for (int j=0; j <3;j++)
+	      {
+		if (&(mesh.face[f_i].V(j)->N()))
+		  {
+		    Point3f vdist = mesh.face[f_i].V(j)->P() - clost;
+		    float weight = sqrt(vdist.dot(vdist));
+		    if (weight > 0)
+		      weight = 1/weight;
+		    else 
+		      weight = 1e12;
+		      
+		    tt +=(mesh.face[f_i].V(j)->N()*weight);
+		  }
+	      }
+    
     
     
     if (sign == true)
