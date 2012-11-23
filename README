@@ -1,17 +1,18 @@
 Requirements:
 =============
-QT creator > 4.4 (http://qt.nokia.com/products/)
+QT-SDK (http://qt-project.org/downloads)
 a c++ compiler
 
 Compiling:
 ==========
-extract archive
+1. extract archive
+2. open command shell and navigate to folder containing the file 'trimesh-tools.pro'
+3. execute the following commands:
 
-open command shell
-navigate to vcglib/apps/[application to compile] e.g. vcglib/apps/trimesh_project
-now exectute the following commands:
-	qmake 
+   	qmake 
 	make
+
+4. The compiled binaries are to be found in the automatically created folder 'bin' in the same directory
 
 Installing: 
 ===========
