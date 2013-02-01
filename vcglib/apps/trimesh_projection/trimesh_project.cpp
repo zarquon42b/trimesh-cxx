@@ -129,6 +129,7 @@ int main(int argc,char ** argv){
   tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
+
   //if (sign == true)
   //  {
   //   tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
@@ -189,7 +190,11 @@ int main(int argc,char ** argv){
 		    tt +=(mesh.face[f_i].V(j)->N()*weight);
 		  }
 	      }
-    
+    float vl = sqrt(tt.dot(tt));
+	    if (vl > 0 && &vl)//check for zero length normals
+	      {
+		tt=tt/vl;
+	      }   
     
     
     if (sign == true)
