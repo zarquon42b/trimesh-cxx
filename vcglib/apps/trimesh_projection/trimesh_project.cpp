@@ -175,7 +175,7 @@ int main(int argc,char ** argv){
     MyFace* f_ptr= GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
     int f_i = vcg::tri::Index(mesh, f_ptr);
     out_cloud.vert[i].Q() = minDist;
-    MyMesh::CoordType tt;
+    MyMesh::CoordType tt = currp*0;
      for (int j=0; j <3;j++)
 	      {
 		if (&(mesh.face[f_i].V(j)->N()))
