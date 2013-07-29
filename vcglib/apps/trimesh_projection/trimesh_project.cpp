@@ -45,8 +45,8 @@ class MyMesh : public tri::TriMesh< vector<MyVertex>, vector<MyFace > >{};
 typedef MyMesh::ScalarType ScalarType;
 
 // Uncomment only one of the two following lines to test different data structures
-typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
-//typedef vcg::SpatialHashTable<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
+//typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
+typedef vcg::SpatialHashTable<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
   bool nosmooth = false, sign = false;
