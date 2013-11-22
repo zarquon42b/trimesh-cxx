@@ -1,0 +1,15 @@
+Source: trimesh-tools
+Section: utils 
+Priority: extra
+Maintainer: Stefan Schlager <zarquon42@gmail.com>
+Build-Depends: debhelper (>= 8.0.0),libqt4-dev, qt4-qmake
+Standards-Version: 3.9.2
+Homepage: http://sourceforge.net/projects/morpho-rpackage
+
+#Vcs-Git: git://git.debian.org/collab-maint/trimesh-tools.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/trimesh-tools.git;a=summary
+
+Package: trimesh-tools
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: command line tools for meshing procedures required for the R-package Morpho

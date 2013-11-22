@@ -1,0 +1,48 @@
+trimesh-tools (0.2-6~precise) precise; urgency=low
+
+  * replaced GridStaticPtr with SpatialHashTable to avoid occational Segfaults
+ 
+ -- Stefan Schlager <zarquon42@gmail.com>  Fri, 22 Nov 2013 07:29:41 +0200
+
+trimesh-tools (0.2-5~precise) precise; urgency=low
+
+  * fixed wrong intitialisation of normals
+
+ -- Stefan Schlager <zarquon42@gmail.com>  Mon, 4 Feb 2013 14:16:41 +0200
+
+trimesh-tools (0.2-4~precise) precise; urgency=low
+
+  * fixed missing normal normalisation in trimesh_project
+
+ -- Stefan Schlager <zarquon42@gmail.com>  Fri, 2 Feb 2013 13:58:34 +0200
+
+trimesh-tools (0.2-3~precise) precise; urgency=low
+
+  * fixed compilation error and improved calculation of normals on the target mesh in trimesh_project
+
+ -- Stefan Schlager <zarquon42@gmail.com>  Mon, 20 Nov 2012 08:36:12 +0200
+
+trimesh-tools (0.2-2) precise; urgency=low
+
+  * updated curvature and added different smoothing options in trismooth
+
+ -- Stefan Schlager <zarquon42@gmail.com>  Mon, 09 Jul 2012 20:26:02 +0200
+
+
+trimesh-tools (0.2-1) precise; urgency=low
+
+  * added curvature
+
+ -- Stefan Schlager <zarquon42@gmail.com>  Sat, 07 Jul 2012 11:03:53 +0200
+
+trimesh-tools (0.1-2) precise; urgency=low
+
+  * adding build dependencies
+
+ -- Stefan Schlager <zarquon42@gmail.com>  Fri, 15 Jun 2012 09:10:25 +0200
+
+trimesh-tools (0.1-1) precise; urgency=low
+
+  * Initial release 
+
+ -- Stefan Schlager <zarquon42@gmail.com>  Thu, 14 Jun 2012 22:39:39 +0200
