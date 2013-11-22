@@ -50,7 +50,7 @@ class MyMesh : public tri::TriMesh< vector<MyVertex>, vector<MyFace > >{};
 typedef MyMesh::ScalarType ScalarType;
 
 // Uncomment only one of the two following lines to test different data structures
-typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
+//typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 //typedef vcg::SpatialHashTable<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
@@ -67,43 +67,29 @@ int main(int argc,char ** argv){
     printf("       --rms          write rms-curvature into vertex quality - if not specified, mean curvature will be used.\n");
     printf("       --abs          write absolute-curvature into vertex quality - if not specified, mean curvature will be used.\n");
     printf("       --gauss        write gaussian-curvature into vertex quality - if not specified, mean curvature will be used.\n");
-
-
-    
-   
-		return 0;
-	}
+    return 0;
+  }
   for (int i = 1; i < argc; i++) {
+    
 
-
-                  if (strcmp("--noclean", argv[i]) == 0)
-                  {
+                  if (strcmp("--noclean", argv[i]) == 0) {
                     noclean = true;
                   }
- if (strcmp("--color", argv[i]) == 0)
-                  {
+		  if (strcmp("--color", argv[i]) == 0) {
                     col = true;
 		  }
- if (strcmp("--rms", argv[i]) == 0)
-                  {
-                    RMS = true;
+		  if (strcmp("--rms", argv[i]) == 0) {
+		    RMS = true;
 		  }
-if (strcmp("--gauss", argv[i]) == 0)
-                  {
+		  if (strcmp("--gauss", argv[i]) == 0) {
                     gauss = true;
 		  }
-if (strcmp("--abs", argv[i]) == 0)
-                  {
+		  if (strcmp("--abs", argv[i]) == 0) {
                     absCurv = true;
 		  }
   }
-
-
-
-    strcpy(filename, argv[2]);
-
-	
-	MyMesh mesh;
+  strcpy(filename, argv[2]);
+  MyMesh mesh;
   
 	
 		
@@ -113,81 +99,56 @@ if (strcmp("--abs", argv[i]) == 0)
   //
   //--------------------------------------------------------------------------------------//
 
-	int err2 = tri::io::Importer<MyMesh>::Open(mesh,argv[1]);
+  int err2 = tri::io::Importer<MyMesh>::Open(mesh,argv[1]);
   if(err2) {
-		printf("Error in reading %s: '%s'\n",argv[1],tri::io::Importer<MyMesh>::ErrorMsg(err2));
-		exit(-1);  
-	}
-
-   //--------------------------------------------------------------------------------------//
-  //
+    printf("Error in reading %s: '%s'\n",argv[1],tri::io::Importer<MyMesh>::ErrorMsg(err2));
+    exit(-1);  
+  }
+  
+  //--------------------------------------------------------------------------------------//
   //                                   PREPROCESS
   //
   // Update the bounding box and initialize max search distance
   // Remove duplicates and update mesh properties
   //--------------------------------------------------------------------------------------//
-if (col == false && noclean == false)
-{
-
-  int dup = tri::Clean<MyMesh>::RemoveDuplicateVertex(mesh);
-  int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
-  if (dup > 0 || unref > 0)
-    {
-                printf("Removed %i duplicate and %i unreferenced vertices from mesh %s\n",dup,unref,argv[2]);
+  if (col == false && noclean == false) {
+    int dup = tri::Clean<MyMesh>::RemoveDuplicateVertex(mesh);
+    int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
+    if (dup > 0 || unref > 0) {
+      printf("Removed %i duplicate and %i unreferenced vertices from mesh %s\n",dup,unref,argv[2]);
     }
-}
- if (col == true && noclean ==false)
-   {
-     int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
-     if (unref > 0)
-       printf("Removed %i unreferenced vertices from mesh %s\n",unref,argv[2]);
-   }
+  }
+  if (col == true && noclean ==false) {
+    int unref =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
+    if (unref > 0)
+      printf("Removed %i unreferenced vertices from mesh %s\n",unref,argv[2]);
+  }
   tri::UpdateQuality<MyMesh>::VertexConstant(mesh, 1);  
-
   tri::UpdateTopology<MyMesh>::VertexFace(mesh);
  //tri::UpdateFlags<MyMesh>::FaceBorderFromVF(mesh);
   tri::UpdateBounding<MyMesh>::Box(mesh);
   tri::UpdateNormals<MyMesh>::PerFaceNormalized(mesh);
   tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(mesh);
   tri::UpdateNormals<MyMesh>::NormalizeVertex(mesh);
-  /*tri::UpdateCurvature<MyMesh>::MeanAndGaussian(mesh);
- for(int i=0; i<mesh.vn; i++){
-   mesh.vert[i].Q() = mesh.vert[i].Kg();
-   }*/
-  
   tri::Allocator<MyMesh>::CompactVertexVector(mesh);
   tri::UpdateCurvature<MyMesh>::MeanAndGaussian(mesh);
   //tri::UpdateCurvature<MyMesh>::VertexCurvature(mesh);
   //tri::UpdateQuality<MyMesh>::VertexFromRMSCurvature(mesh);  
-  if (RMS == true)
-    {
-      tri::UpdateQuality<MyMesh>::VertexFromRMSCurvature(mesh);  
-    }
-  else if  (gauss == true)
-    {  
-      tri::UpdateQuality<MyMesh>::VertexFromGaussianCurvature(mesh);
-    }
- else if  (absCurv == true)
-    {  
-      tri::UpdateQuality<MyMesh>::VertexFromAbsoluteCurvature(mesh);
-    }
-  else
-    {  
-      tri::UpdateQuality<MyMesh>::VertexFromMeanCurvature(mesh);
-    }
-  // vcg::CallBackPos *cb;
+  if (RMS == true) {
+    tri::UpdateQuality<MyMesh>::VertexFromRMSCurvature(mesh);  
+  } else if  (gauss == true) {  
+    tri::UpdateQuality<MyMesh>::VertexFromGaussianCurvature(mesh);
+  } else if  (absCurv == true) {  
+    tri::UpdateQuality<MyMesh>::VertexFromAbsoluteCurvature(mesh);
+  } else {  
+    tri::UpdateQuality<MyMesh>::VertexFromMeanCurvature(mesh);
+  }
 
-  
   //--------------------------------------------------------------------------------------//
   int mask0 = tri::io::Mask::IOM_VERTNORMAL;
   if (col == true)
-    {
-      mask0  = mask0+tri::io::Mask::IOM_VERTCOLOR;
-    }
+    mask0  = mask0+tri::io::Mask::IOM_VERTCOLOR;
   
   tri::io::ExporterPLY<MyMesh>::Save(mesh,filename,mask0+ tri::io::Mask::IOM_VERTQUALITY, false); // in ASCII
-  
- 
-
   return 0;
 }

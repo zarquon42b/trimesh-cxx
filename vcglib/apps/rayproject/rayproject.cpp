@@ -46,8 +46,8 @@ typedef MyMesh::ScalarType ScalarType;
 
 
 // Uncomment only one of the two following lines to test different data structures
-typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
-//typedef vcg::SpatialHashTable<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
+//typedef vcg::GridStaticPtr<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
+typedef vcg::SpatialHashTable<MyMesh::FaceType, MyMesh::ScalarType> TriMeshGrid;
 
 int main(int argc,char ** argv){
   float angmax = 4, angle = 0;  
@@ -78,85 +78,64 @@ int main(int argc,char ** argv){
     printf("projects the vertices of the reference mesh along their normals onto the target mesh when terminated.\n");
     //printf("The vertex coordinates represent the projected samples (in same order as input.\n");
     printf("The vertex quality (requires ply files) represents the projection distance.\n");
-		return 0;
-	}
+    return 0;
+  }
 
 
   for (int i = 1; i < argc; i++) {
 
       if (i + 1 != argc) {// Check that we haven't finished parsing already for option wtih value
-	if (strcmp("-t", argv[i]) == 0)
-	  {
-	    thresh = atof(argv[i + 1]);
+	if (strcmp("-t", argv[i]) == 0) {
+	  thresh = atof(argv[i + 1]);
+	}
+	if (strcmp("-o", argv[i]) == 0) {
+	  strcpy(filename, argv[i+1]);
+	  if (i==argc-2)
+	    noout=false;
+	}
+	if (strcmp("--angmax", argv[i]) == 0) {
+	  angmax = atof(argv[i + 1]);
+	  angcheck = true;
 	  }
-	if (strcmp("-o", argv[i]) == 0)
-	  {
-	    strcpy(filename, argv[i+1]);
-	    if (i==argc-2)
-	      {noout=false;}
-	  }
-	if (strcmp("--angmax", argv[i]) == 0)
-	  {
-	    angmax = atof(argv[i + 1]);
-	    angcheck = true;
-	  }
-
       }
-                if (strcmp("-cloud", argv[i]) == 0)
-                {
-                cloud = true;
-
-            }
-                
-                if (strcmp("--inbound", argv[i]) == 0)
-                {
-                inbound = true;
-                
-            }
-                if (strcmp("--minray", argv[i]) == 0)
-                {
-                minray = true;
-
-            }
-                if (strcmp("--strict", argv[i]) == 0)
-                {
-                strict = true;
-            }
-       }
+      if (strcmp("-cloud", argv[i]) == 0)
+	cloud = true;      
+      if (strcmp("--inbound", argv[i]) == 0)
+	inbound = true;
+      if (strcmp("--minray", argv[i]) == 0)
+	minray = true;
+      if (strcmp("--strict", argv[i]) == 0)
+	strict = true;
+  }
   
-
     if (noout == true)
-          {
           strcpy(filename, "project.mesh.ply");
-          }
-
-   // thresh=atof(argv[3]);
+    
+    // thresh=atof(argv[3]);
     MyMesh mesh;
     MyMesh in_cloud;
     MyMesh out_cloud;
-	
-  //--------------------------------------------------------------------------------------//
-  //
-  //                                   OPENING THE FILES  
-  //
-  //--------------------------------------------------------------------------------------//
-  int err = tri::io::Importer<MyMesh>::Open(in_cloud,argv[1]);
-  if(err) {
-		printf("Error in reading %s: '%s'\n",argv[1],tri::io::Importer<MyMesh>::ErrorMsg(err));
-		exit(-1);  
-	}
-  int err2 = tri::io::Importer<MyMesh>::Open(mesh,argv[2]);
-  if(err2) {
-		printf("Error in reading %s: '%s'\n",argv[2],tri::io::Importer<MyMesh>::ErrorMsg(err2));
-		exit(-1);  
-	}
+    
+    //--------------------------------------------------------------------------------------//
+    //
+    //                                   OPENING THE FILES  
+    //
+    //--------------------------------------------------------------------------------------//
+    int err = tri::io::Importer<MyMesh>::Open(in_cloud,argv[1]);
+    if(err) {
+      printf("Error in reading %s: '%s'\n",argv[1],tri::io::Importer<MyMesh>::ErrorMsg(err));
+      exit(-1);  
+    }
+    int err2 = tri::io::Importer<MyMesh>::Open(mesh,argv[2]);
+    if(err2) {
+      printf("Error in reading %s: '%s'\n",argv[2],tri::io::Importer<MyMesh>::ErrorMsg(err2));
+      exit(-1);  
+    }
 
 
   // Allocate space for projected cloud
   tri::Allocator<MyMesh>::AddVertices(out_cloud,in_cloud.vn);
   
-    
-
   //--------------------------------------------------------------------------------------//
   //
   //                                   PREPROCESS
@@ -179,21 +158,19 @@ int main(int argc,char ** argv){
   //tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
   //tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(in_cloud);
   tri::UpdateBounding<MyMesh>::Box(in_cloud);
-  if (cloud == false)
-    {
-      tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
-      tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(in_cloud);
-    }
+  if (cloud == false) {
+    tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
+    tri::UpdateNormals<MyMesh>::PerVertexAngleWeighted(in_cloud);
+  }
   tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
   tri::UpdateQuality<MyMesh>::VertexConstant(in_cloud, 0);
   tri::UpdateQuality<MyMesh>::VertexConstant(out_cloud, 0);
-
+  
   float maxDist = mesh.bbox.Diag();
   float minDist = 1e-10;
   float t;
   float tNew;
- 
-
+  
   //--------------------------------------------------------------------------------------//
   //
   //                              INITIALIZE SEARCH STRUCTURES
@@ -218,8 +195,7 @@ int main(int argc,char ** argv){
   //--------------------------------------------------------------------------------------//
   int t1=clock();
   //int count = 1;
-  for(int i=0; i<in_cloud.vn; i++){
-    
+  for(int i=0; i<in_cloud.vn; i++) {
     angfail = false;
     vcg::Ray3f ray;
     Point3f orig = in_cloud.vert[i].P();
@@ -227,211 +203,170 @@ int main(int argc,char ** argv){
     Point3f dirOrig = dir;
     
     if (inbound == true)
-      {
-	dir = -dir;
-      }
-    
+      dir = -dir;
+          
     ray.SetOrigin(orig);
     ray.SetDirection(dir);
-    
-    
     MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
     
-    if (f_ptr && t < thresh)
-      {
-	double tOut = t;
-	
-	if (angcheck == true) //check angles between normals
-	  {
-	    int f_ang = vcg::tri::Index(mesh, f_ptr);
-	    MyMesh::CoordType nout = (mesh.face[f_ang].V(0)->N()+mesh.face[f_ang].V(1)->N()+mesh.face[f_ang].V(2)->N())/3;
+    if (f_ptr && t < thresh) {
+      double tOut = t;
+      
+      if (angcheck == true) { //check angles between normals
+	int f_ang = vcg::tri::Index(mesh, f_ptr);
+	MyMesh::CoordType nout = (mesh.face[f_ang].V(0)->N()+mesh.face[f_ang].V(1)->N()+mesh.face[f_ang].V(2)->N())/3;
+	double lnout;
+	lnout = sqrt(nout.dot(nout));
+	nout = nout/lnout;	    
+	Point3f tmp = nout-dirOrig;
+	angle = acos(((tmp.dot(tmp))-2)/-2);
+	tOut = t;
+      }	
+      
+      if (minray == true || angmax < angle ) {
+	Point3f dir1 = -dir;
+	ray.SetDirection(dir1);
+	MyFace* f_ptr1=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, tNew);
+	// check if reverse ray finds a closer match
+	if (minray == true) {
+	  if (f_ptr1 && tNew < t) {
+	    dir = dir1;
+	    t = tNew;
+	    tOut = -t;
+	    f_ptr = f_ptr1;
+	  }
+	}
+	// check if there is a good normal match the other direction
+	if (angcheck == true) {
+	  if (f_ptr1 && tNew < thresh) {
+	    int f_ang = vcg::tri::Index(mesh, f_ptr1);
+	    MyMesh::CoordType noutRev = (mesh.face[f_ang].V(0)->N()+mesh.face[f_ang].V(1)->N()+mesh.face[f_ang].V(2)->N())/3;
 	    double lnout;
-	    lnout = sqrt(nout.dot(nout));
-	    nout = nout/lnout;	    
-	    Point3f tmp = nout-dirOrig;
-	    angle = acos(((tmp.dot(tmp))-2)/-2);
-	    tOut = t;
-	  }	
-	
-	if (minray == true || angmax < angle )
-	  {
-	    Point3f dir1 = -dir;
-	    ray.SetDirection(dir1);
-	    MyFace* f_ptr1=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, tNew);
-	    // check if reverse ray finds a closer match
-	    if (minray == true)
-	      {
-		if (f_ptr1 && tNew < t)
-		  {
-		    dir = dir1;
-		    t = tNew;
-		    tOut = -t;
-		    f_ptr = f_ptr1;
-		  }
-	      }
-	    // check if there is a good normal match the other direction
-	    if (angcheck == true)
-	      {
-		if (f_ptr1 && tNew < thresh)
-		  {
-		    int f_ang = vcg::tri::Index(mesh, f_ptr1);
-		    MyMesh::CoordType noutRev = (mesh.face[f_ang].V(0)->N()+mesh.face[f_ang].V(1)->N()+mesh.face[f_ang].V(2)->N())/3;
-		    double lnout;
-		    lnout = sqrt(noutRev.dot(noutRev));
-		    noutRev = noutRev/lnout;
-		    Point3f tmp = noutRev-dirOrig;
-		    float angle1 = acos(((tmp.dot(tmp))-2)/-2);
-		    
-		    if ( angle1 < angmax )
-		      {
-			tOut=30;
-			dir = dir1;
-			t = tNew;
-			tOut = -t;
-			f_ptr = f_ptr1;
-		      }
-		    else //could not find matching normal  - take closest point 
-		      {   
-			Point3f& currp = in_cloud.vert[i].P();
-			Point3f& clost = out_cloud.vert[i].P();
-			MyFace* f_ptr=GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
-			if (strict == false)
-			  { out_cloud.vert[i].Q() = minDist;
-			  }
-			else
-			  {out_cloud.vert[i].Q() = 1e12;
-			  }		
-			
-			int f_i = vcg::tri::Index(mesh, f_ptr);
-			MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-			ti = ti/sqrt(ti.dot(ti));
-			Point3f dif = clost - currp;
-			float signo = dif.dot(ti);	
-			if (signo < 0)
-			  { out_cloud.vert[i].Q() = -out_cloud.vert[i].Q() ;
-			  }
-			out_cloud.vert[i].N() = ti;
-			angfail = true;
-		      }
-		  }
-	      }
-	  }
-	if (angfail == false) //we have found a fitting point and use the normals + origin to hit it
-	  {
-	    MyMesh::CoordType tt = in_cloud.vert[i].P()+dir*t;
-	    int f_i = vcg::tri::Index(mesh, f_ptr);
-	    MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
+	    lnout = sqrt(noutRev.dot(noutRev));
+	    noutRev = noutRev/lnout;
+	    Point3f tmp = noutRev-dirOrig;
+	    float angle1 = acos(((tmp.dot(tmp))-2)/-2);
 	    
-	    ti = ti/sqrt(ti.dot(ti));
-	    out_cloud.vert[i].N() = ti;
-	    out_cloud.vert[i].Q() = tOut;
-	    out_cloud.vert[i].P() = tt;
+	    if ( angle1 < angmax ) {
+	      tOut=30;
+	      dir = dir1;
+	      t = tNew;
+	      tOut = -t;
+	      f_ptr = f_ptr1;
+	    } else {//could not find matching normal  - take closest point 
+	      Point3f& currp = in_cloud.vert[i].P();
+	      Point3f& clost = out_cloud.vert[i].P();
+	      MyFace* f_ptr=GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
+	      if (strict == false) { 
+		out_cloud.vert[i].Q() = minDist;
+	      } else {
+		out_cloud.vert[i].Q() = 1e12;
+	      }		
+	      
+	      int f_i = vcg::tri::Index(mesh, f_ptr);
+	      MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
+	      ti = ti/sqrt(ti.dot(ti));
+	      Point3f dif = clost - currp;
+	      float signo = dif.dot(ti);	
+	      if (signo < 0)
+		out_cloud.vert[i].Q() = -out_cloud.vert[i].Q() ;
+	      out_cloud.vert[i].N() = ti;
+	      angfail = true;
+	    }
 	  }
+	}
       }
-    else // look the other way as outward nothing was hit
-      {
-	ray.SetDirection(-dir);
-	MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
-	
-	if (f_ptr && t < thresh)
-	      {
-		if (angcheck == true) // check if there is a good normal match the other direction
-		  {
-		    int f_ang = vcg::tri::Index(mesh, f_ptr);
-		    MyMesh::CoordType nout = (mesh.face[f_ang].V(0)->N()+mesh.face[f_ang].V(1)->N()+mesh.face[f_ang].V(2)->N())/3;
-		    double lnout;
-		    lnout = sqrt(nout.dot(nout));
-		    nout = nout/lnout;
-		    Point3f tmp = nout-dirOrig;
-		    angle = acos(((tmp.dot(tmp))-2)/-2);
-		    if (angle > angmax)
-		      {
-			angfail = true;
-		      }
-		  }
-		
-		
-		if (angfail == false) //we have found a fitting point and use the normals + origin to hit it
-		  {
-		    MyMesh::CoordType tt = in_cloud.vert[i].P()-dir*t;
-		    int f_i = vcg::tri::Index(mesh, f_ptr);
-		    MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-		    ti = ti/sqrt(ti.dot(ti));
-		    out_cloud.vert[i].N() = ti;
-		    out_cloud.vert[i].Q() = -t;
-		    out_cloud.vert[i].P() = tt;		
-		  }
-		else
-		  {  
-		    Point3f& currp = in_cloud.vert[i].P();
-		    Point3f& clost = out_cloud.vert[i].P();
-		    MyFace* f_ptr=GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
-		    if (strict == false)
-		      { out_cloud.vert[i].Q() = minDist;
-		      }
-		    else
-		      {out_cloud.vert[i].Q() = 1e12;
-		      }		
-		    int f_i = vcg::tri::Index(mesh, f_ptr);
-		    MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-		    ti = ti/sqrt(ti.dot(ti));
-		    Point3f dif = clost - currp;
-		    float signo = dif.dot(ti);	
-		    if (signo < 0)
-		      { out_cloud.vert[i].Q() = -out_cloud.vert[i].Q() ;
-		      }
-		    out_cloud.vert[i].N() = ti;
-		  }
-	      }
-            else
-	      {   //printf("Couldn't trace landmark %d along ray, closest point on target will be sought\n",i+1);
-                Point3f& currp = in_cloud.vert[i].P();
-                Point3f& clost = out_cloud.vert[i].P();
-                MyFace* f_ptr=GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
-                if (strict == false)
-		  { out_cloud.vert[i].Q() = minDist;
-		  }
-                else
-		  {out_cloud.vert[i].Q() = 1e12;
-		  }
-		
-                int f_i = vcg::tri::Index(mesh, f_ptr);
-                MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
-                ti = ti/sqrt(ti.dot(ti));
-		Point3f dif = clost - currp;
-		float signo = dif.dot(ti);	
-		if (signo < 0)
-		  { out_cloud.vert[i].Q() = -out_cloud.vert[i].Q() ;
-		  }
-		out_cloud.vert[i].N() = ti;
-	      }
+      if (angfail == false) {//we have found a fitting point and use the normals + origin to hit it
+	MyMesh::CoordType tt = in_cloud.vert[i].P()+dir*t;
+	int f_i = vcg::tri::Index(mesh, f_ptr);
+	MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
+	ti = ti/sqrt(ti.dot(ti));
+	out_cloud.vert[i].N() = ti;
+	out_cloud.vert[i].Q() = tOut;
+	out_cloud.vert[i].P() = tt;
       }
+    } else {// look the other way as outward nothing was hit
+      ray.SetDirection(-dir);
+      MyFace* f_ptr=GridDoRay(static_grid,FintFunct, mf, ray, maxDist, t);
+      if (f_ptr && t < thresh) {
+	if (angcheck == true) {// check if there is a good normal match the other direction
+	  int f_ang = vcg::tri::Index(mesh, f_ptr);
+	  MyMesh::CoordType nout = (mesh.face[f_ang].V(0)->N()+mesh.face[f_ang].V(1)->N()+mesh.face[f_ang].V(2)->N())/3;
+	  double lnout;
+	  lnout = sqrt(nout.dot(nout));
+	  nout = nout/lnout;
+	  Point3f tmp = nout-dirOrig;
+	  angle = acos(((tmp.dot(tmp))-2)/-2);
+	  if (angle > angmax)
+	    angfail = true;
+	}
+			
+	if (angfail == false) {//we have found a fitting point and use the normals + origin to hit it
+	  MyMesh::CoordType tt = in_cloud.vert[i].P()-dir*t;
+	  int f_i = vcg::tri::Index(mesh, f_ptr);
+	  MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
+	  ti = ti/sqrt(ti.dot(ti));
+	  out_cloud.vert[i].N() = ti;
+	  out_cloud.vert[i].Q() = -t;
+	  out_cloud.vert[i].P() = tt;		
+	} else {  
+	  Point3f& currp = in_cloud.vert[i].P();
+	  Point3f& clost = out_cloud.vert[i].P();
+	  MyFace* f_ptr=GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
+	  if (strict == false) { 
+	    out_cloud.vert[i].Q() = minDist;
+	  } else {
+	    out_cloud.vert[i].Q() = 1e12;
+	  }		
+	  int f_i = vcg::tri::Index(mesh, f_ptr);
+	  MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
+	  ti = ti/sqrt(ti.dot(ti));
+	  Point3f dif = clost - currp;
+	  float signo = dif.dot(ti);	
+	  if (signo < 0)
+	    out_cloud.vert[i].Q() = -out_cloud.vert[i].Q() ;
+	  
+	  out_cloud.vert[i].N() = ti;
+	}
+      } else {   //printf("Couldn't trace landmark %d along ray, closest point on target will be sought\n",i+1);
+	Point3f& currp = in_cloud.vert[i].P();
+	Point3f& clost = out_cloud.vert[i].P();
+	MyFace* f_ptr=GridClosest(static_grid, PDistFunct, mf, currp, maxDist, minDist, clost);
+	if (strict == false) { 
+	  out_cloud.vert[i].Q() = minDist;
+	} else {
+	  out_cloud.vert[i].Q() = 1e12;
+	}
+	int f_i = vcg::tri::Index(mesh, f_ptr);
+	MyMesh::CoordType ti = (mesh.face[f_i].V(0)->N()+mesh.face[f_i].V(1)->N()+mesh.face[f_i].V(2)->N())/3;
+	ti = ti/sqrt(ti.dot(ti));
+	Point3f dif = clost - currp;
+	float signo = dif.dot(ti);	
+	if (signo < 0)
+	  out_cloud.vert[i].Q() = -out_cloud.vert[i].Q() ;
 	
-	in_cloud.vert[i].P()=out_cloud.vert[i].P();
-	in_cloud.vert[i].Q()=out_cloud.vert[i].Q();
-	in_cloud.vert[i].N()=out_cloud.vert[i].N();
+	out_cloud.vert[i].N() = ti;
+      }
+    }
+    
+    in_cloud.vert[i].P()=out_cloud.vert[i].P();
+    in_cloud.vert[i].Q()=out_cloud.vert[i].Q();
+    in_cloud.vert[i].N()=out_cloud.vert[i].N();
   }
   //--------------------------------------------------------------------------------------//
   //
   //                                UPDATE PROJECTED MESH
   //
   //--------------------------------------------------------------------------------------//
-   
-    
   tri::UpdateBounding<MyMesh>::Box(in_cloud);
-  if (cloud == false)
-    {
-      tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
-      tri::Smooth<MyMesh>::VertexNormalLaplacian(in_cloud,2,false);
-      tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
-      
-    }
+  if (cloud == false) {
+    tri::UpdateNormals<MyMesh>::PerFaceNormalized(in_cloud);
+    tri::Smooth<MyMesh>::VertexNormalLaplacian(in_cloud,2,false);
+    tri::UpdateNormals<MyMesh>::NormalizeVertex(in_cloud);
+  }
   int t2 = clock();
   tri::io::ExporterPLY<MyMesh>::Save(in_cloud,filename,tri::io::Mask::IOM_VERTNORMAL +tri::io::Mask::IOM_VERTQUALITY, false); // in ASCII
   printf("Completed projection of %d sample in %i msec\n", in_cloud.vn, t2-t1);
-  
-  
-  //printf("%i ",tt);
   return 0;
 }
 
